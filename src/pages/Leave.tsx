@@ -2,23 +2,12 @@
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import GlassCard from "@/components/GlassCard";
-import LeaveCard from "@/components/LeaveCard";
 import AnimatedButton from "@/components/AnimatedButton";
-import { Search, Filter, Calendar, Plus, CheckCircle, Clock, XCircle } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-type LeaveStatus = "approved" | "pending" | "rejected";
-
-type LeaveRequest = {
-  id: string;
-  employeeName: string;
-  type: string;
-  status: LeaveStatus;
-  startDate: string;
-  endDate: string;
-  reason: string;
-};
+import { Plus } from "lucide-react";
+import { LeaveRequest, LeaveStatus } from "@/types/leave";
+import LeaveStats from "@/components/leave/LeaveStats";
+import LeaveFilters from "@/components/leave/LeaveFilters";
+import LeaveTabContent from "@/components/leave/LeaveTabContent";
 
 const Leave = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -119,39 +108,6 @@ const Leave = () => {
     return matchesSearch && matchesStatus;
   });
 
-  // Group leave requests by status
-  const pendingRequests = filteredLeaveRequests.filter(
-    (leave) => leave.status === "pending"
-  );
-  const approvedRequests = filteredLeaveRequests.filter(
-    (leave) => leave.status === "approved"
-  );
-  const rejectedRequests = filteredLeaveRequests.filter(
-    (leave) => leave.status === "rejected"
-  );
-
-  // Stats
-  const leaveStats = [
-    {
-      title: "Pending Requests",
-      count: pendingRequests.length,
-      icon: Clock,
-      color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-    },
-    {
-      title: "Approved Leaves",
-      count: approvedRequests.length,
-      icon: CheckCircle,
-      color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-    },
-    {
-      title: "Rejected Requests",
-      count: rejectedRequests.length,
-      icon: XCircle,
-      color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-    },
-  ];
-
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
@@ -174,160 +130,18 @@ const Leave = () => {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            {leaveStats.map((stat, index) => (
-              <GlassCard 
-                key={stat.title} 
-                className="animate-slide-up" 
-                style={{ animationDelay: `${0.05 * index}s` }}
-              >
-                <div className="flex items-center">
-                  <div
-                    className={`p-3 rounded-lg mr-4 ${stat.color}`}
-                  >
-                    <stat.icon className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">{stat.title}</p>
-                    <p className="text-2xl font-semibold">{stat.count}</p>
-                  </div>
-                </div>
-              </GlassCard>
-            ))}
-          </div>
+          <LeaveStats leaveRequests={filteredLeaveRequests} />
 
           {/* Filters */}
-          <GlassCard className="mb-6 animate-slide-up" style={{ animationDelay: "0.15s" }}>
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search by employee name..."
-                  className="w-full pl-9 pr-4 py-2 rounded-lg border border-border bg-transparent focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-
-              <div className="flex gap-4">
-                <div className="relative">
-                  <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <select
-                    className="pl-9 pr-8 py-2 rounded-lg border border-border bg-transparent appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value as "all" | LeaveStatus)}
-                  >
-                    <option value="all">All Status</option>
-                    <option value="pending">Pending</option>
-                    <option value="approved">Approved</option>
-                    <option value="rejected">Rejected</option>
-                  </select>
-                </div>
-
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <select
-                    className="pl-9 pr-8 py-2 rounded-lg border border-border bg-transparent appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-                  >
-                    <option value="this-month">This Month</option>
-                    <option value="next-month">Next Month</option>
-                    <option value="all-time">All Time</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </GlassCard>
+          <LeaveFilters 
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            filterStatus={filterStatus}
+            setFilterStatus={setFilterStatus}
+          />
 
           {/* Tabbed content */}
-          <Tabs defaultValue="all" className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
-            <TabsList className="mb-6">
-              <TabsTrigger value="all">All Requests</TabsTrigger>
-              <TabsTrigger value="pending">Pending</TabsTrigger>
-              <TabsTrigger value="approved">Approved</TabsTrigger>
-              <TabsTrigger value="rejected">Rejected</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="all">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredLeaveRequests.length > 0 ? (
-                  filteredLeaveRequests.map((leave, index) => (
-                    <div 
-                      key={leave.id} 
-                      className="animate-slide-up" 
-                      style={{ animationDelay: `${0.05 * index}s` }}
-                    >
-                      <LeaveCard leave={leave} />
-                    </div>
-                  ))
-                ) : (
-                  <div className="col-span-full text-center py-8">
-                    <p className="text-muted-foreground">No leave requests found</p>
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="pending">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {pendingRequests.length > 0 ? (
-                  pendingRequests.map((leave, index) => (
-                    <div 
-                      key={leave.id} 
-                      className="animate-slide-up" 
-                      style={{ animationDelay: `${0.05 * index}s` }}
-                    >
-                      <LeaveCard leave={leave} />
-                    </div>
-                  ))
-                ) : (
-                  <div className="col-span-full text-center py-8">
-                    <p className="text-muted-foreground">No pending leave requests</p>
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="approved">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {approvedRequests.length > 0 ? (
-                  approvedRequests.map((leave, index) => (
-                    <div 
-                      key={leave.id} 
-                      className="animate-slide-up" 
-                      style={{ animationDelay: `${0.05 * index}s` }}
-                    >
-                      <LeaveCard leave={leave} />
-                    </div>
-                  ))
-                ) : (
-                  <div className="col-span-full text-center py-8">
-                    <p className="text-muted-foreground">No approved leave requests</p>
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="rejected">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {rejectedRequests.length > 0 ? (
-                  rejectedRequests.map((leave, index) => (
-                    <div 
-                      key={leave.id} 
-                      className="animate-slide-up" 
-                      style={{ animationDelay: `${0.05 * index}s` }}
-                    >
-                      <LeaveCard leave={leave} />
-                    </div>
-                  ))
-                ) : (
-                  <div className="col-span-full text-center py-8">
-                    <p className="text-muted-foreground">No rejected leave requests</p>
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-          </Tabs>
+          <LeaveTabContent filteredLeaveRequests={filteredLeaveRequests} />
         </div>
       </main>
 
