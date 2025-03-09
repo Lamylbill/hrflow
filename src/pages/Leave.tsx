@@ -216,7 +216,7 @@ const Leave = () => {
                   <select
                     className="pl-9 pr-8 py-2 rounded-lg border border-border bg-transparent appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                     value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
+                    onChange={(e) => setFilterStatus(e.target.value as "all" | LeaveStatus)}
                   >
                     <option value="all">All Status</option>
                     <option value="pending">Pending</option>
