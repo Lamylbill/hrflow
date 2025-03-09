@@ -1,7 +1,16 @@
 
 import { useState } from "react";
-import { MoreHorizontal, Mail, Phone } from "lucide-react";
+import { MoreHorizontal, Mail, Phone, Edit, Trash2, FileText } from "lucide-react";
 import GlassCard from "./GlassCard";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "@/hooks/use-toast";
 
 interface EmployeeCardProps {
   employee: {
@@ -13,10 +22,47 @@ interface EmployeeCardProps {
     phone: string;
     imageUrl?: string;
   };
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
+  onViewDetails?: (id: string) => void;
 }
 
-const EmployeeCard = ({ employee }: EmployeeCardProps) => {
+const EmployeeCard = ({ employee, onEdit, onDelete, onViewDetails }: EmployeeCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
+
+  const handleEdit = () => {
+    if (onEdit) {
+      onEdit(employee.id);
+    } else {
+      toast({
+        title: "Edit Employee",
+        description: `Editing ${employee.name}'s information`,
+      });
+    }
+  };
+
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete(employee.id);
+    } else {
+      toast({
+        title: "Delete Employee",
+        description: `${employee.name} would be removed from the system`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleViewDetails = () => {
+    if (onViewDetails) {
+      onViewDetails(employee.id);
+    } else {
+      toast({
+        title: "View Details",
+        description: `Viewing ${employee.name}'s details`,
+      });
+    }
+  };
 
   return (
     <GlassCard
@@ -44,9 +90,26 @@ const EmployeeCard = ({ employee }: EmployeeCardProps) => {
         <div className="ml-4 flex-1">
           <div className="flex justify-between">
             <h3 className="text-base font-semibold">{employee.name}</h3>
-            <button className="text-muted-foreground hover:text-foreground">
-              <MoreHorizontal className="h-5 w-5" />
-            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="text-muted-foreground hover:text-foreground">
+                  <MoreHorizontal className="h-5 w-5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleViewDetails}>
+                  <FileText className="mr-2 h-4 w-4" /> View Details
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleEdit}>
+                  <Edit className="mr-2 h-4 w-4" /> Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDelete} className="text-red-600">
+                  <Trash2 className="mr-2 h-4 w-4" /> Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           <p className="text-sm text-muted-foreground">
             {employee.position} • {employee.department}

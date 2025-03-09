@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Employees from "./pages/Employees";
 import Leave from "./pages/Leave";
+import Payroll from "./pages/Payroll";
 import NotFound from "./pages/NotFound";
 import React from "react";
 
@@ -27,6 +28,7 @@ const App = () => {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/employees" element={<Employees />} />
               <Route path="/leave" element={<Leave />} />
+              <Route path="/payroll" element={<Payroll />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -2,20 +2,24 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import GlassCard from "./GlassCard";
+import { LeaveStatus } from "@/types/leave";
+import { toast } from "@/hooks/use-toast";
 
 interface LeaveCardProps {
   leave: {
     id: string;
     employeeName: string;
     type: string;
-    status: "approved" | "pending" | "rejected";
+    status: LeaveStatus;
     startDate: string;
     endDate: string;
     reason?: string;
   };
+  onApprove?: (id: string) => void;
+  onReject?: (id: string) => void;
 }
 
-const LeaveCard = ({ leave }: LeaveCardProps) => {
+const LeaveCard = ({ leave, onApprove, onReject }: LeaveCardProps) => {
   const statusStyles = {
     approved: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
     pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
@@ -43,6 +47,30 @@ const LeaveCard = ({ leave }: LeaveCardProps) => {
     const diffTime = Math.abs(end.getTime() - start.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
     return diffDays;
+  };
+
+  const handleApprove = () => {
+    if (onApprove) {
+      onApprove(leave.id);
+    } else {
+      toast({
+        title: "Leave Approved",
+        description: `${leave.employeeName}'s leave request has been approved`,
+        variant: "success",
+      });
+    }
+  };
+
+  const handleReject = () => {
+    if (onReject) {
+      onReject(leave.id);
+    } else {
+      toast({
+        title: "Leave Rejected",
+        description: `${leave.employeeName}'s leave request has been rejected`,
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -80,10 +108,16 @@ const LeaveCard = ({ leave }: LeaveCardProps) => {
           </p>
           {leave.status === "pending" && (
             <div className="flex space-x-2">
-              <button className="text-xs text-green-600 hover:text-green-700 font-medium">
+              <button 
+                className="text-xs text-green-600 hover:text-green-700 font-medium"
+                onClick={handleApprove}
+              >
                 Approve
               </button>
-              <button className="text-xs text-red-600 hover:text-red-700 font-medium">
+              <button 
+                className="text-xs text-red-600 hover:text-red-700 font-medium"
+                onClick={handleReject}
+              >
                 Reject
               </button>
             </div>
