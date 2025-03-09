@@ -2,8 +2,9 @@
 import { cn } from "@/lib/utils";
 import GlassCard from "./GlassCard";
 import { LucideIcon } from "lucide-react";
+import { HTMLAttributes } from "react";
 
-interface DashboardCardProps {
+interface DashboardCardProps extends HTMLAttributes<HTMLDivElement> {
   title: string;
   value: string | number;
   description?: string;
@@ -24,9 +25,10 @@ const DashboardCard = ({
   iconColor = "bg-primary/10 text-primary",
   trend,
   className,
+  ...props
 }: DashboardCardProps) => {
   return (
-    <GlassCard className={cn("", className)} hoverEffect>
+    <GlassCard className={cn("", className)} hoverEffect {...props}>
       <div className="flex justify-between items-start">
         <div>
           <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>

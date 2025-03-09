@@ -8,12 +8,24 @@ import AnimatedButton from "@/components/AnimatedButton";
 import { Search, Filter, Calendar, Plus, CheckCircle, Clock, XCircle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+type LeaveStatus = "approved" | "pending" | "rejected";
+
+type LeaveRequest = {
+  id: string;
+  employeeName: string;
+  type: string;
+  status: LeaveStatus;
+  startDate: string;
+  endDate: string;
+  reason: string;
+};
+
 const Leave = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterStatus, setFilterStatus] = useState<"all" | LeaveStatus>("all");
 
   // Mock leave data
-  const leaveRequests = [
+  const leaveRequests: LeaveRequest[] = [
     {
       id: "1",
       employeeName: "John Smith",
