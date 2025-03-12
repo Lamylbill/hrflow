@@ -8,6 +8,7 @@ const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -20,6 +21,23 @@ const Navbar = () => {
 
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    // Check authentication status
+    const checkAuth = () => {
+      const auth = localStorage.getItem("isAuthenticated") === "true";
+      setIsAuthenticated(auth);
+    };
+    
+    checkAuth();
+    
+    // Set up event listener for storage changes
+    window.addEventListener("storage", checkAuth);
+    
+    return () => {
+      window.removeEventListener("storage", checkAuth);
+    };
   }, []);
 
   // Close mobile menu when changing routes
@@ -72,19 +90,32 @@ const Navbar = () => {
             ))}
           </div>
           <div className="flex items-center space-x-4">
-            <Link to="/login">
-              <AnimatedButton
-                variant="ghost"
-                className="text-sm font-medium px-4 py-2"
-              >
-                Log in
-              </AnimatedButton>
-            </Link>
-            <Link to="/login?signup=true">
-              <AnimatedButton className="text-sm font-medium px-4 py-2">
-                Sign up
-              </AnimatedButton>
-            </Link>
+            {isAuthenticated ? (
+              <Link to="/dashboard">
+                <AnimatedButton
+                  variant="ghost"
+                  className="text-sm font-medium px-4 py-2"
+                >
+                  Dashboard
+                </AnimatedButton>
+              </Link>
+            ) : (
+              <>
+                <Link to="/login">
+                  <AnimatedButton
+                    variant="ghost"
+                    className="text-sm font-medium px-4 py-2"
+                  >
+                    Log in
+                  </AnimatedButton>
+                </Link>
+                <Link to="/login?signup=true">
+                  <AnimatedButton className="text-sm font-medium px-4 py-2">
+                    Sign up
+                  </AnimatedButton>
+                </Link>
+              </>
+            )}
           </div>
         </div>
 
@@ -116,19 +147,32 @@ const Navbar = () => {
               </Link>
             ))}
             <div className="flex flex-col space-y-2 pt-2 border-t border-border">
-              <Link to="/login">
-                <AnimatedButton
-                  variant="ghost"
-                  className="text-sm font-medium w-full py-2"
-                >
-                  Log in
-                </AnimatedButton>
-              </Link>
-              <Link to="/login?signup=true">
-                <AnimatedButton className="text-sm font-medium w-full py-2">
-                  Sign up
-                </AnimatedButton>
-              </Link>
+              {isAuthenticated ? (
+                <Link to="/dashboard">
+                  <AnimatedButton
+                    variant="ghost"
+                    className="text-sm font-medium w-full py-2"
+                  >
+                    Dashboard
+                  </AnimatedButton>
+                </Link>
+              ) : (
+                <>
+                  <Link to="/login">
+                    <AnimatedButton
+                      variant="ghost"
+                      className="text-sm font-medium w-full py-2"
+                    >
+                      Log in
+                    </AnimatedButton>
+                  </Link>
+                  <Link to="/login?signup=true">
+                    <AnimatedButton className="text-sm font-medium w-full py-2">
+                      Sign up
+                    </AnimatedButton>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
