@@ -9,15 +9,22 @@ import Dashboard from "./pages/Dashboard";
 import Employees from "./pages/Employees";
 import Leave from "./pages/Leave";
 import Payroll from "./pages/Payroll";
+import ActivityLog from "./pages/ActivityLog";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
-import React from "react";
+import React, { useEffect } from "react";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { initializeApp } from "./utils/localStorage";
 
 // Create a client
 const queryClient = new QueryClient();
 
 const App = () => {
+  useEffect(() => {
+    // Initialize local storage data
+    initializeApp();
+  }, []);
+
   return (
     <React.StrictMode>
       <BrowserRouter>
@@ -57,6 +64,14 @@ const App = () => {
                 element={
                   <ProtectedRoute>
                     <Payroll />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/activity-log"
+                element={
+                  <ProtectedRoute>
+                    <ActivityLog />
                   </ProtectedRoute>
                 }
               />

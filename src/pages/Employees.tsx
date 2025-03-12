@@ -1,91 +1,27 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import NavbarLoggedIn from "@/components/NavbarLoggedIn";
 import Footer from "@/components/Footer";
 import EmployeeCard from "@/components/EmployeeCard";
 import GlassCard from "@/components/GlassCard";
 import AnimatedButton from "@/components/AnimatedButton";
 import { Search, Plus, Filter, ArrowUpDown } from "lucide-react";
+import { getEmployees, deleteEmployee } from "@/utils/localStorage";
+import { Employee } from "@/types/employee";
+import { toast } from "@/hooks/use-toast";
+import AddEmployeeDialog from "@/components/employee/AddEmployeeDialog";
 
 const Employees = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState("All");
   const [sortBy, setSortBy] = useState("name");
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
-  // Mock employee data
-  const employees = [
-    {
-      id: "1",
-      name: "John Smith",
-      position: "Senior Developer",
-      department: "Engineering",
-      email: "john.smith@example.com",
-      phone: "+1 (555) 123-4567",
-    },
-    {
-      id: "2",
-      name: "Emily Johnson",
-      position: "Product Manager",
-      department: "Product",
-      email: "emily.johnson@example.com",
-      phone: "+1 (555) 234-5678",
-    },
-    {
-      id: "3",
-      name: "Michael Brown",
-      position: "UI Designer",
-      department: "Design",
-      email: "michael.brown@example.com",
-      phone: "+1 (555) 345-6789",
-    },
-    {
-      id: "4",
-      name: "Jessica Williams",
-      position: "Marketing Specialist",
-      department: "Marketing",
-      email: "jessica.williams@example.com",
-      phone: "+1 (555) 456-7890",
-    },
-    {
-      id: "5",
-      name: "Robert Jones",
-      position: "Sales Representative",
-      department: "Sales",
-      email: "robert.jones@example.com",
-      phone: "+1 (555) 567-8901",
-    },
-    {
-      id: "6",
-      name: "Sarah Miller",
-      position: "HR Coordinator",
-      department: "HR",
-      email: "sarah.miller@example.com",
-      phone: "+1 (555) 678-9012",
-    },
-    {
-      id: "7",
-      name: "David Davis",
-      position: "Frontend Developer",
-      department: "Engineering",
-      email: "david.davis@example.com",
-      phone: "+1 (555) 789-0123",
-    },
-    {
-      id: "8",
-      name: "Jennifer Garcia",
-      position: "Content Writer",
-      department: "Marketing",
-      email: "jennifer.garcia@example.com",
-      phone: "+1 (555) 890-1234",
-    },
-    {
-      id: "9",
-      name: "Thomas Wilson",
-      position: "Backend Developer",
-      department: "Engineering",
-      email: "thomas.wilson@example.com",
-      phone: "+1 (555) 901-2345",
-    },
-  ];
+  useEffect(() => {
+    // Load employees from localStorage
+    setEmployees(getEmployees());
+  }, []);
 
   // Get unique departments
   const departments = ["All", ...new Set(employees.map((emp) => emp.department))];
@@ -115,6 +51,23 @@ const Employees = () => {
     return 0;
   });
 
+  const handleDeleteEmployee = (id: string) => {
+    const deletedSuccessfully = deleteEmployee(id);
+    if (deletedSuccessfully) {
+      setEmployees(getEmployees());
+      toast({
+        title: "Employee Deleted",
+        description: "The employee has been removed successfully",
+        variant: "default",
+      });
+    }
+  };
+
+  const handleEmployeeAdded = () => {
+    setEmployees(getEmployees());
+    setDialogOpen(false);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <NavbarLoggedIn />
@@ -130,7 +83,10 @@ const Employees = () => {
               </p>
             </div>
 
-            <AnimatedButton className="mt-4 md:mt-0 flex items-center">
+            <AnimatedButton 
+              className="mt-4 md:mt-0 flex items-center"
+              onClick={() => setDialogOpen(true)}
+            >
               <Plus className="h-4 w-4 mr-2" />
               Add Employee
             </AnimatedButton>
@@ -191,7 +147,10 @@ const Employees = () => {
                   className="animate-slide-up" 
                   style={{ animationDelay: `${0.05 * index}s` }}
                 >
-                  <EmployeeCard employee={employee} />
+                  <EmployeeCard 
+                    employee={employee} 
+                    onDelete={handleDeleteEmployee}
+                  />
                 </div>
               ))
             ) : (
@@ -212,21 +171,17 @@ const Employees = () => {
             )}
           </div>
           
-          {/* Pagination */}
+          {/* Pagination - simplified since we're using localStorage */}
           {filteredEmployees.length > 0 && (
             <div className="mt-8 flex justify-center">
               <div className="flex space-x-1">
                 <button className="px-3 py-1 rounded-md text-sm border border-border hover:bg-secondary transition-colors">
                   Previous
                 </button>
-                {[1, 2, 3].map((page) => (
+                {[1].map((page) => (
                   <button
                     key={page}
-                    className={`px-3 py-1 rounded-md text-sm ${
-                      page === 1
-                        ? "bg-primary text-primary-foreground"
-                        : "hover:bg-secondary transition-colors"
-                    }`}
+                    className="bg-primary text-primary-foreground px-3 py-1 rounded-md text-sm"
                   >
                     {page}
                   </button>
@@ -241,6 +196,13 @@ const Employees = () => {
       </main>
 
       <Footer />
+      
+      {/* Add Employee Dialog */}
+      <AddEmployeeDialog 
+        open={dialogOpen} 
+        onClose={() => setDialogOpen(false)}
+        onEmployeeAdded={handleEmployeeAdded}
+      />
     </div>
   );
 };

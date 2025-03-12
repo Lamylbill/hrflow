@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import NavbarLoggedIn from "@/components/NavbarLoggedIn";
 import Footer from "@/components/Footer";
 import AnimatedButton from "@/components/AnimatedButton";
@@ -7,95 +8,23 @@ import { LeaveRequest, LeaveStatus } from "@/types/leave";
 import LeaveStats from "@/components/leave/LeaveStats";
 import LeaveFilters from "@/components/leave/LeaveFilters";
 import LeaveTabContent from "@/components/leave/LeaveTabContent";
+import { getLeaveRequests } from "@/utils/localStorage";
+import AddLeaveRequestDialog from "@/components/leave/AddLeaveRequestDialog";
 
 const Leave = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<"all" | LeaveStatus>("all");
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
-  // Mock leave data
-  const leaveRequests: LeaveRequest[] = [
-    {
-      id: "1",
-      employeeName: "John Smith",
-      type: "Annual Leave",
-      status: "approved",
-      startDate: "2023-06-10",
-      endDate: "2023-06-15",
-      reason: "Family vacation",
-    },
-    {
-      id: "2",
-      employeeName: "Emily Johnson",
-      type: "Sick Leave",
-      status: "pending",
-      startDate: "2023-06-12",
-      endDate: "2023-06-13",
-      reason: "Doctor's appointment",
-    },
-    {
-      id: "3",
-      employeeName: "Michael Brown",
-      type: "Personal Leave",
-      status: "rejected",
-      startDate: "2023-06-20",
-      endDate: "2023-06-22",
-      reason: "Personal matters",
-    },
-    {
-      id: "4",
-      employeeName: "Jessica Williams",
-      type: "Annual Leave",
-      status: "approved",
-      startDate: "2023-06-25",
-      endDate: "2023-06-30",
-      reason: "Summer holiday",
-    },
-    {
-      id: "5",
-      employeeName: "Robert Jones",
-      type: "Work from Home",
-      status: "pending",
-      startDate: "2023-06-13",
-      endDate: "2023-06-14",
-      reason: "Home repairs",
-    },
-    {
-      id: "6",
-      employeeName: "Sarah Miller",
-      type: "Sick Leave",
-      status: "approved",
-      startDate: "2023-06-15",
-      endDate: "2023-06-16",
-      reason: "Not feeling well",
-    },
-    {
-      id: "7",
-      employeeName: "David Davis",
-      type: "Annual Leave",
-      status: "pending",
-      startDate: "2023-07-01",
-      endDate: "2023-07-05",
-      reason: "Family event",
-    },
-    {
-      id: "8",
-      employeeName: "Jennifer Garcia",
-      type: "Personal Leave",
-      status: "approved",
-      startDate: "2023-06-18",
-      endDate: "2023-06-19",
-      reason: "Personal matters",
-    },
-    {
-      id: "9",
-      employeeName: "Thomas Wilson",
-      type: "Work from Home",
-      status: "pending",
-      startDate: "2023-06-14",
-      endDate: "2023-06-15",
-      reason: "Internet installation",
-    },
-  ];
+  useEffect(() => {
+    // Load leave requests from localStorage
+    loadLeaveRequests();
+  }, []);
+
+  const loadLeaveRequests = () => {
+    setLeaveRequests(getLeaveRequests());
+  };
 
   // Filter leave requests
   const filteredLeaveRequests = leaveRequests.filter((leave) => {
@@ -106,6 +35,15 @@ const Leave = () => {
       filterStatus === "all" || leave.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
+
+  const handleLeaveStatusChange = () => {
+    loadLeaveRequests();
+  };
+
+  const handleLeaveAdded = () => {
+    loadLeaveRequests();
+    setDialogOpen(false);
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -122,14 +60,17 @@ const Leave = () => {
               </p>
             </div>
 
-            <AnimatedButton className="mt-4 md:mt-0 flex items-center">
+            <AnimatedButton 
+              className="mt-4 md:mt-0 flex items-center"
+              onClick={() => setDialogOpen(true)}
+            >
               <Plus className="h-4 w-4 mr-2" />
               Request Leave
             </AnimatedButton>
           </div>
 
           {/* Stats */}
-          <LeaveStats leaveRequests={filteredLeaveRequests} />
+          <LeaveStats leaveRequests={leaveRequests} />
 
           {/* Filters */}
           <LeaveFilters 
@@ -140,11 +81,22 @@ const Leave = () => {
           />
 
           {/* Tabbed content */}
-          <LeaveTabContent filteredLeaveRequests={filteredLeaveRequests} />
+          <LeaveTabContent 
+            filteredLeaveRequests={filteredLeaveRequests} 
+            onStatusChange={handleLeaveStatusChange}
+          />
         </div>
       </main>
 
       <Footer />
+      
+      {/* Add Leave Request Dialog */}
+      <AddLeaveRequestDialog 
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        onLeaveAdded={handleLeaveAdded}
+        employees={getLeaveRequests().map(lr => lr.employeeName)}
+      />
     </div>
   );
 };

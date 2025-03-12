@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import NavbarLoggedIn from "@/components/NavbarLoggedIn";
 import Footer from "@/components/Footer";
 import GlassCard from "@/components/GlassCard";
@@ -7,122 +8,22 @@ import { Download, Plus, Filter, Search } from "lucide-react";
 import PayrollTable from "@/components/payroll/PayrollTable";
 import PayrollStats from "@/components/payroll/PayrollStats";
 import { PayrollData } from "@/types/payroll";
+import { getPayrollData, processPayroll } from "@/utils/localStorage";
+import { toast } from "@/hooks/use-toast";
 
 const Payroll = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterMonth, setFilterMonth] = useState("Current Month");
+  const [payrollData, setPayrollData] = useState<PayrollData[]>([]);
 
-  // Mock payroll data
-  const payrollData: PayrollData[] = [
-    {
-      id: "1",
-      employeeName: "John Smith",
-      employeeId: "EMP001",
-      position: "Senior Developer",
-      salary: 85000,
-      bonus: 2000,
-      deductions: 1200,
-      netPay: 7025,
-      paymentDate: "2023-06-30",
-      status: "paid"
-    },
-    {
-      id: "2",
-      employeeName: "Emily Johnson",
-      employeeId: "EMP002",
-      position: "Product Manager",
-      salary: 92000,
-      bonus: 3000,
-      deductions: 1500,
-      netPay: 7792,
-      paymentDate: "2023-06-30",
-      status: "paid"
-    },
-    {
-      id: "3",
-      employeeName: "Michael Brown",
-      employeeId: "EMP003",
-      position: "UI Designer",
-      salary: 72000,
-      bonus: 0,
-      deductions: 950,
-      netPay: 5925,
-      paymentDate: "2023-06-30",
-      status: "paid"
-    },
-    {
-      id: "4",
-      employeeName: "Jessica Williams",
-      employeeId: "EMP004",
-      position: "Marketing Specialist",
-      salary: 65000,
-      bonus: 1500,
-      deductions: 850,
-      netPay: 5429,
-      paymentDate: "2023-06-30",
-      status: "paid"
-    },
-    {
-      id: "5",
-      employeeName: "Robert Jones",
-      employeeId: "EMP005",
-      position: "Sales Representative",
-      salary: 68000,
-      bonus: 5000,
-      deductions: 980,
-      netPay: 6002,
-      paymentDate: "2023-06-30",
-      status: "paid"
-    },
-    {
-      id: "6",
-      employeeName: "Sarah Miller",
-      employeeId: "EMP006",
-      position: "HR Coordinator",
-      salary: 62000,
-      bonus: 1000,
-      deductions: 820,
-      netPay: 5182,
-      paymentDate: "2023-06-30",
-      status: "pending"
-    },
-    {
-      id: "7",
-      employeeName: "David Davis",
-      employeeId: "EMP007",
-      position: "Frontend Developer",
-      salary: 78000,
-      bonus: 1500,
-      deductions: 1050,
-      netPay: 6538,
-      paymentDate: "",
-      status: "processing"
-    },
-    {
-      id: "8",
-      employeeName: "Jennifer Garcia",
-      employeeId: "EMP008",
-      position: "Content Writer",
-      salary: 60000,
-      bonus: 800,
-      deductions: 750,
-      netPay: 5004,
-      paymentDate: "",
-      status: "processing"
-    },
-    {
-      id: "9",
-      employeeName: "Thomas Wilson",
-      employeeId: "EMP009",
-      position: "Backend Developer",
-      salary: 82000,
-      bonus: 1800,
-      deductions: 1150,
-      netPay: 6888,
-      paymentDate: "",
-      status: "draft"
-    }
-  ];
+  useEffect(() => {
+    // Load payroll data from localStorage
+    loadPayrollData();
+  }, []);
+
+  const loadPayrollData = () => {
+    setPayrollData(getPayrollData());
+  };
 
   // Filter payroll data by search term
   const filteredPayrollData = payrollData.filter((payroll) =>
@@ -130,6 +31,35 @@ const Payroll = () => {
     payroll.employeeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
     payroll.position.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleRunPayroll = () => {
+    // Get all pending and processing payroll items
+    const pendingProcessingIds = payrollData
+      .filter(p => p.status === "pending" || p.status === "processing")
+      .map(p => p.id);
+    
+    if (pendingProcessingIds.length === 0) {
+      toast({
+        title: "No Payroll to Process",
+        description: "There are no pending or processing payroll items to run",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Process the payroll
+    const processed = processPayroll(pendingProcessingIds);
+    
+    if (processed.length > 0) {
+      toast({
+        title: "Payroll Processed",
+        description: `Successfully processed ${processed.length} payroll items`,
+      });
+      
+      // Refresh the data
+      loadPayrollData();
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -151,7 +81,10 @@ const Payroll = () => {
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </AnimatedButton>
-              <AnimatedButton className="flex items-center">
+              <AnimatedButton 
+                className="flex items-center"
+                onClick={handleRunPayroll}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Run Payroll
               </AnimatedButton>
@@ -194,7 +127,10 @@ const Payroll = () => {
           </GlassCard>
 
           {/* Payroll table */}
-          <PayrollTable payrollData={filteredPayrollData} />
+          <PayrollTable 
+            payrollData={filteredPayrollData} 
+            onPayrollUpdate={loadPayrollData}
+          />
         </div>
       </main>
 

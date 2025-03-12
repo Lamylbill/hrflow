@@ -1,8 +1,10 @@
+
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import GlassCard from "./GlassCard";
 import { LeaveStatus } from "@/types/leave";
 import { toast } from "@/hooks/use-toast";
+import { updateLeaveStatus } from "@/utils/localStorage";
 
 interface LeaveCardProps {
   leave: {
@@ -14,11 +16,10 @@ interface LeaveCardProps {
     endDate: string;
     reason?: string;
   };
-  onApprove?: (id: string) => void;
-  onReject?: (id: string) => void;
+  onStatusChange?: () => void;
 }
 
-const LeaveCard = ({ leave, onApprove, onReject }: LeaveCardProps) => {
+const LeaveCard = ({ leave, onStatusChange }: LeaveCardProps) => {
   const statusStyles = {
     approved: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
     pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
@@ -49,26 +50,30 @@ const LeaveCard = ({ leave, onApprove, onReject }: LeaveCardProps) => {
   };
 
   const handleApprove = () => {
-    if (onApprove) {
-      onApprove(leave.id);
-    } else {
+    const updatedLeave = updateLeaveStatus(leave.id, "approved");
+    if (updatedLeave) {
       toast({
         title: "Leave Approved",
         description: `${leave.employeeName}'s leave request has been approved`,
         variant: "default",
       });
+      if (onStatusChange) {
+        onStatusChange();
+      }
     }
   };
 
   const handleReject = () => {
-    if (onReject) {
-      onReject(leave.id);
-    } else {
+    const updatedLeave = updateLeaveStatus(leave.id, "rejected");
+    if (updatedLeave) {
       toast({
         title: "Leave Rejected",
         description: `${leave.employeeName}'s leave request has been rejected`,
         variant: "destructive",
       });
+      if (onStatusChange) {
+        onStatusChange();
+      }
     }
   };
 

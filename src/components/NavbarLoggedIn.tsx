@@ -1,137 +1,122 @@
 
-import { useState, useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, LogOut } from "lucide-react";
-import AnimatedButton from "./AnimatedButton";
+import { NavLink } from "react-router-dom";
+import {
+  BarChart,
+  Users,
+  Calendar,
+  CreditCard,
+  ClipboardList,
+  LogOut,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 
 const NavbarLoggedIn = () => {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const location = useLocation();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 10) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  // Close mobile menu when changing routes
-  useEffect(() => {
-    setIsMenuOpen(false);
-  }, [location]);
-
   const handleLogout = () => {
-    localStorage.removeItem("isAuthenticated");
+    localStorage.setItem("isAuthenticated", "false");
+    
     toast({
       title: "Logged out",
       description: "You have been successfully logged out",
-      variant: "default",
     });
+    
     navigate("/login");
   };
 
-  const navItems = [
-    { name: "Dashboard", path: "/dashboard" },
-    { name: "Employees", path: "/employees" },
-    { name: "Leave", path: "/leave" },
-    { name: "Payroll", path: "/payroll" },
-  ];
-
   return (
-    <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled
-          ? "py-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm"
-          : "py-4 bg-transparent"
-      }`}
-    >
-      <div className="hr-container flex items-center justify-between">
-        <Link
-          to="/dashboard"
-          className="flex items-center space-x-2 text-primary font-semibold text-xl"
-        >
-          <span className="bg-primary text-white px-2 py-1 rounded-md">HR</span>
-          <span className="tracking-tight">Flow</span>
-        </Link>
-
-        {/* Desktop navigation */}
-        <div className="hidden md:flex items-center space-x-8">
-          <div className="flex space-x-6">
-            {navItems.map((item) => (
-              <Link
-                key={item.name}
-                to={item.path}
-                className={`text-sm font-medium transition-colors hover:text-primary ${
-                  location.pathname === item.path
-                    ? "text-primary"
-                    : "text-foreground/80"
-                }`}
-              >
-                {item.name}
-              </Link>
-            ))}
-          </div>
-          <div className="flex items-center space-x-4">
-            <AnimatedButton
-              variant="ghost"
-              className="text-sm font-medium px-4 py-2 flex items-center"
-              onClick={handleLogout}
+    <div className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+      <div className="flex items-center justify-between p-4 hr-container">
+        <div className="flex items-center">
+          <span className="text-xl font-bold mr-8">HR Flow</span>
+          <nav className="hidden md:flex space-x-1">
+            <NavLink
+              to="/dashboard"
+              className={({ isActive }) =>
+                `px-3 py-2 text-sm rounded-md ${
+                  isActive
+                    ? "bg-secondary text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                } transition-colors`
+              }
             >
-              <LogOut className="w-4 h-4 mr-2" />
-              Log out
-            </AnimatedButton>
-          </div>
+              <div className="flex items-center">
+                <BarChart className="h-4 w-4 mr-2" />
+                Dashboard
+              </div>
+            </NavLink>
+            <NavLink
+              to="/employees"
+              className={({ isActive }) =>
+                `px-3 py-2 text-sm rounded-md ${
+                  isActive
+                    ? "bg-secondary text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                } transition-colors`
+              }
+            >
+              <div className="flex items-center">
+                <Users className="h-4 w-4 mr-2" />
+                Employees
+              </div>
+            </NavLink>
+            <NavLink
+              to="/leave"
+              className={({ isActive }) =>
+                `px-3 py-2 text-sm rounded-md ${
+                  isActive
+                    ? "bg-secondary text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                } transition-colors`
+              }
+            >
+              <div className="flex items-center">
+                <Calendar className="h-4 w-4 mr-2" />
+                Leave
+              </div>
+            </NavLink>
+            <NavLink
+              to="/payroll"
+              className={({ isActive }) =>
+                `px-3 py-2 text-sm rounded-md ${
+                  isActive
+                    ? "bg-secondary text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                } transition-colors`
+              }
+            >
+              <div className="flex items-center">
+                <CreditCard className="h-4 w-4 mr-2" />
+                Payroll
+              </div>
+            </NavLink>
+            <NavLink
+              to="/activity-log"
+              className={({ isActive }) =>
+                `px-3 py-2 text-sm rounded-md ${
+                  isActive
+                    ? "bg-secondary text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                } transition-colors`
+              }
+            >
+              <div className="flex items-center">
+                <ClipboardList className="h-4 w-4 mr-2" />
+                Activity Log
+              </div>
+            </NavLink>
+          </nav>
         </div>
-
-        {/* Mobile menu button */}
         <button
-          className="md:hidden text-foreground"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className="px-3 py-2 text-sm text-red-500 hover:text-red-600 hover:bg-secondary/50 rounded-md transition-colors flex items-center"
+          onClick={handleLogout}
         >
-          {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          <LogOut className="h-4 w-4 mr-2" />
+          Logout
         </button>
       </div>
-
-      {/* Mobile navigation */}
-      {isMenuOpen && (
-        <div className="md:hidden bg-background/95 backdrop-blur-md shadow-lg animate-slide-down">
-          <div className="hr-container py-4 flex flex-col space-y-4">
-            {navItems.map((item) => (
-              <Link
-                key={item.name}
-                to={item.path}
-                className={`text-sm font-medium py-2 transition-colors hover:text-primary ${
-                  location.pathname === item.path
-                    ? "text-primary"
-                    : "text-foreground/80"
-                }`}
-              >
-                {item.name}
-              </Link>
-            ))}
-            <div className="flex flex-col space-y-2 pt-2 border-t border-border">
-              <AnimatedButton
-                variant="ghost"
-                className="text-sm font-medium w-full py-2 flex items-center justify-center"
-                onClick={handleLogout}
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Log out
-              </AnimatedButton>
-            </div>
-          </div>
-        </div>
-      )}
-    </nav>
+    </div>
   );
 };
 

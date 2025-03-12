@@ -5,9 +5,10 @@ import { LeaveRequest } from "@/types/leave";
 
 interface LeaveTabContentProps {
   filteredLeaveRequests: LeaveRequest[];
+  onStatusChange?: () => void;
 }
 
-const LeaveTabContent = ({ filteredLeaveRequests }: LeaveTabContentProps) => {
+const LeaveTabContent = ({ filteredLeaveRequests, onStatusChange }: LeaveTabContentProps) => {
   // Group leave requests by status
   const pendingRequests = filteredLeaveRequests.filter(
     (leave) => leave.status === "pending"
@@ -37,7 +38,7 @@ const LeaveTabContent = ({ filteredLeaveRequests }: LeaveTabContentProps) => {
                 className="animate-slide-up" 
                 style={{ animationDelay: `${0.05 * index}s` }}
               >
-                <LeaveCard leave={leave} />
+                <LeaveCard leave={leave} onStatusChange={onStatusChange} />
               </div>
             ))
           ) : (
@@ -57,7 +58,7 @@ const LeaveTabContent = ({ filteredLeaveRequests }: LeaveTabContentProps) => {
                 className="animate-slide-up" 
                 style={{ animationDelay: `${0.05 * index}s` }}
               >
-                <LeaveCard leave={leave} />
+                <LeaveCard leave={leave} onStatusChange={onStatusChange} />
               </div>
             ))
           ) : (
@@ -77,7 +78,7 @@ const LeaveTabContent = ({ filteredLeaveRequests }: LeaveTabContentProps) => {
                 className="animate-slide-up" 
                 style={{ animationDelay: `${0.05 * index}s` }}
               >
-                <LeaveCard leave={leave} />
+                <LeaveCard leave={leave} onStatusChange={onStatusChange} />
               </div>
             ))
           ) : (
@@ -97,7 +98,7 @@ const LeaveTabContent = ({ filteredLeaveRequests }: LeaveTabContentProps) => {
                 className="animate-slide-up" 
                 style={{ animationDelay: `${0.05 * index}s` }}
               >
-                <LeaveCard leave={leave} />
+                <LeaveCard leave={leave} onStatusChange={onStatusChange} />
               </div>
             ))
           ) : (
