@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import GlassCard from "./GlassCard";
@@ -56,7 +55,7 @@ const LeaveCard = ({ leave, onApprove, onReject }: LeaveCardProps) => {
       toast({
         title: "Leave Approved",
         description: `${leave.employeeName}'s leave request has been approved`,
-        variant: "success",
+        variant: "default",
       });
     }
   };
