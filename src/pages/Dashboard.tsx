@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import Navbar from "@/components/Navbar";
+import NavbarLoggedIn from "@/components/NavbarLoggedIn";
 import Footer from "@/components/Footer";
 import DashboardCard from "@/components/DashboardCard";
 import GlassCard from "@/components/GlassCard";
@@ -109,7 +109,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Navbar />
+      <NavbarLoggedIn />
 
       <main className="flex-grow pt-24 pb-12 page-transition">
         <div className="hr-container">

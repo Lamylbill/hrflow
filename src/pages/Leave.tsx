@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import Navbar from "@/components/Navbar";
+import NavbarLoggedIn from "@/components/NavbarLoggedIn";
 import Footer from "@/components/Footer";
 import AnimatedButton from "@/components/AnimatedButton";
 import { Plus } from "lucide-react";
@@ -110,7 +109,7 @@ const Leave = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Navbar />
+      <NavbarLoggedIn />
 
       <main className="flex-grow pt-24 pb-12 page-transition">
         <div className="hr-container">

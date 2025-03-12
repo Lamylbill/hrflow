@@ -1,10 +1,9 @@
-
 import { useState } from "react";
-import Navbar from "@/components/Navbar";
+import NavbarLoggedIn from "@/components/NavbarLoggedIn";
 import Footer from "@/components/Footer";
 import GlassCard from "@/components/GlassCard";
 import AnimatedButton from "@/components/AnimatedButton";
-import { Download, Plus, Filter, Search, CreditCard, Wallet, PiggyBank } from "lucide-react";
+import { Download, Plus, Filter, Search } from "lucide-react";
 import PayrollTable from "@/components/payroll/PayrollTable";
 import PayrollStats from "@/components/payroll/PayrollStats";
 import { PayrollData } from "@/types/payroll";
@@ -134,7 +133,7 @@ const Payroll = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Navbar />
+      <NavbarLoggedIn />
 
       <main className="flex-grow pt-24 pb-12 page-transition">
         <div className="hr-container">

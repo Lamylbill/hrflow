@@ -9,8 +9,10 @@ import Dashboard from "./pages/Dashboard";
 import Employees from "./pages/Employees";
 import Leave from "./pages/Leave";
 import Payroll from "./pages/Payroll";
+import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import React from "react";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 // Create a client
 const queryClient = new QueryClient();
@@ -25,10 +27,39 @@ const App = () => {
             <Sonner />
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/employees" element={<Employees />} />
-              <Route path="/leave" element={<Leave />} />
-              <Route path="/payroll" element={<Payroll />} />
+              <Route path="/login" element={<Login />} />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/employees"
+                element={
+                  <ProtectedRoute>
+                    <Employees />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/leave"
+                element={
+                  <ProtectedRoute>
+                    <Leave />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/payroll"
+                element={
+                  <ProtectedRoute>
+                    <Payroll />
+                  </ProtectedRoute>
+                }
+              />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
