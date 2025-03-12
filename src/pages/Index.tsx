@@ -16,8 +16,10 @@ const Index = () => {
         {/* Hero Section */}
         <Hero />
         
-        {/* Features Section */}
-        <Features />
+        {/* Features Section with ID for navigation */}
+        <section id="features">
+          <Features />
+        </section>
         
         {/* Testimonials Section */}
         <section className="py-20">
@@ -61,8 +63,8 @@ const Index = () => {
           </div>
         </section>
         
-        {/* Pricing Section */}
-        <section className="py-20 bg-secondary/50">
+        {/* Pricing Section with ID for navigation */}
+        <section id="pricing" className="py-20 bg-secondary/50">
           <div className="hr-container">
             <div className="text-center max-w-3xl mx-auto mb-16 animate-slide-up">
               <h2 className="text-3xl font-bold tracking-tight mb-4">Simple, transparent pricing</h2>
@@ -144,6 +146,7 @@ const Index = () => {
                       <AnimatedButton 
                         className="w-full"
                         variant={plan.popular ? "default" : "outline"}
+                        onClick={() => window.location.href = "/login?signup=true&plan=" + plan.name.toLowerCase()}
                       >
                         Get started
                       </AnimatedButton>
@@ -151,6 +154,126 @@ const Index = () => {
                   </div>
                 </GlassCard>
               ))}
+            </div>
+          </div>
+        </section>
+        
+        {/* About Section with ID for navigation */}
+        <section id="about" className="py-20">
+          <div className="hr-container">
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-16 animate-slide-up">
+                <h2 className="text-3xl font-bold tracking-tight mb-4">About HRFlow</h2>
+                <p className="text-lg text-muted-foreground">
+                  We're on a mission to simplify HR management for small and medium businesses
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                <div className="animate-slide-up">
+                  <h3 className="text-2xl font-semibold mb-4">Our Story</h3>
+                  <p className="text-muted-foreground mb-6">
+                    Founded in 2023, HRFlow began with a simple idea: HR management shouldn't be complex 
+                    or expensive for small businesses. Our team of HR professionals and software engineers 
+                    joined forces to create a solution that combines powerful functionality with simplicity.
+                  </p>
+                  <p className="text-muted-foreground">
+                    Today, HRFlow serves thousands of businesses worldwide, helping them save time and 
+                    focus on what matters most—their people and their business growth.
+                  </p>
+                </div>
+                
+                <div className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
+                  <GlassCard>
+                    <div className="aspect-video bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-slate-800 rounded-lg flex items-center justify-center">
+                      <p className="text-center text-muted-foreground p-6">
+                        Company image or video will appear here
+                      </p>
+                    </div>
+                  </GlassCard>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        
+        {/* Contact Section with ID for navigation */}
+        <section id="contact" className="py-20 bg-secondary/50">
+          <div className="hr-container">
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-16 animate-slide-up">
+                <h2 className="text-3xl font-bold tracking-tight mb-4">Get in Touch</h2>
+                <p className="text-lg text-muted-foreground">
+                  Have questions or need help? Our team is here for you
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div className="animate-slide-up">
+                  <GlassCard>
+                    <div className="p-6">
+                      <h3 className="text-xl font-semibold mb-4">Contact Information</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <p className="font-medium">Email</p>
+                          <p className="text-muted-foreground">support@hrflow.com</p>
+                        </div>
+                        <div>
+                          <p className="font-medium">Phone</p>
+                          <p className="text-muted-foreground">+1 (555) 123-4567</p>
+                        </div>
+                        <div>
+                          <p className="font-medium">Address</p>
+                          <p className="text-muted-foreground">
+                            123 HR Street, Suite 456<br />
+                            San Francisco, CA 94103
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </GlassCard>
+                </div>
+                
+                <div className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
+                  <GlassCard>
+                    <div className="p-6">
+                      <h3 className="text-xl font-semibold mb-4">Send us a message</h3>
+                      <form className="space-y-4">
+                        <div>
+                          <label htmlFor="name" className="block text-sm font-medium mb-1">Name</label>
+                          <input
+                            id="name"
+                            type="text"
+                            className="w-full px-4 py-2 rounded-lg border border-border bg-background"
+                            placeholder="Your name"
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="email" className="block text-sm font-medium mb-1">Email</label>
+                          <input
+                            id="email"
+                            type="email"
+                            className="w-full px-4 py-2 rounded-lg border border-border bg-background"
+                            placeholder="Your email"
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="message" className="block text-sm font-medium mb-1">Message</label>
+                          <textarea
+                            id="message"
+                            rows={4}
+                            className="w-full px-4 py-2 rounded-lg border border-border bg-background"
+                            placeholder="Your message"
+                          ></textarea>
+                        </div>
+                        <AnimatedButton className="w-full" type="submit">
+                          Send Message
+                        </AnimatedButton>
+                      </form>
+                    </div>
+                  </GlassCard>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -165,12 +288,16 @@ const Index = () => {
                   Join thousands of businesses that trust HRFlow to manage their HR processes efficiently.
                 </p>
                 <div className="flex flex-col sm:flex-row justify-center gap-4">
-                  <AnimatedButton className="px-8 py-3 text-base font-medium">
-                    Start your free trial
-                  </AnimatedButton>
-                  <AnimatedButton variant="outline" className="px-8 py-3 text-base font-medium">
-                    Schedule a demo
-                  </AnimatedButton>
+                  <Link to="/login?signup=true">
+                    <AnimatedButton className="px-8 py-3 text-base font-medium">
+                      Start your free trial
+                    </AnimatedButton>
+                  </Link>
+                  <a href="#contact">
+                    <AnimatedButton variant="outline" className="px-8 py-3 text-base font-medium">
+                      Schedule a demo
+                    </AnimatedButton>
+                  </a>
                 </div>
                 
                 <p className="mt-4 text-sm text-muted-foreground">

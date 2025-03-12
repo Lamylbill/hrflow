@@ -27,12 +27,13 @@ const Navbar = () => {
     setIsMenuOpen(false);
   }, [location]);
 
+  // Landing page public navigation items
   const navItems = [
     { name: "Home", path: "/" },
-    { name: "Dashboard", path: "/dashboard" },
-    { name: "Employees", path: "/employees" },
-    { name: "Leave", path: "/leave" },
-    { name: "Payroll", path: "/payroll" },
+    { name: "Features", path: "/#features" },
+    { name: "Pricing", path: "/#pricing" },
+    { name: "About", path: "/#about" },
+    { name: "Contact", path: "/#contact" },
   ];
 
   return (
@@ -60,7 +61,8 @@ const Navbar = () => {
                 key={item.name}
                 to={item.path}
                 className={`text-sm font-medium transition-colors hover:text-primary ${
-                  location.pathname === item.path
+                  location.pathname === item.path || 
+                  (item.path.startsWith("/#") && location.pathname === "/" && location.hash === item.path.substring(1))
                     ? "text-primary"
                     : "text-foreground/80"
                 }`}
@@ -78,7 +80,7 @@ const Navbar = () => {
                 Log in
               </AnimatedButton>
             </Link>
-            <Link to="/signup">
+            <Link to="/login?signup=true">
               <AnimatedButton className="text-sm font-medium px-4 py-2">
                 Sign up
               </AnimatedButton>
@@ -104,7 +106,8 @@ const Navbar = () => {
                 key={item.name}
                 to={item.path}
                 className={`text-sm font-medium py-2 transition-colors hover:text-primary ${
-                  location.pathname === item.path
+                  location.pathname === item.path || 
+                  (item.path.startsWith("/#") && location.pathname === "/" && location.hash === item.path.substring(1))
                     ? "text-primary"
                     : "text-foreground/80"
                 }`}
@@ -121,7 +124,7 @@ const Navbar = () => {
                   Log in
                 </AnimatedButton>
               </Link>
-              <Link to="/signup">
+              <Link to="/login?signup=true">
                 <AnimatedButton className="text-sm font-medium w-full py-2">
                   Sign up
                 </AnimatedButton>
