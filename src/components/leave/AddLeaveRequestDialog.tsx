@@ -25,23 +25,30 @@ import { Plus } from "lucide-react";
 import { Employee } from "@/types/employee";
 import { getEmployees } from "@/utils/localStorage";
 
-export function AddLeaveRequestDialog() {
-  const [open, setOpen] = useState(false);
+interface AddLeaveRequestDialogProps {
+  open: boolean;
+  onClose: () => void;
+  onLeaveAdded: () => void;
+  employees: string[];
+}
+
+export function AddLeaveRequestDialog({ open, onClose, onLeaveAdded, employees }: AddLeaveRequestDialogProps) {
   const [employeeName, setEmployeeName] = useState("");
   const [leaveType, setLeaveType] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [reason, setReason] = useState("");
-  const [employees, setEmployees] = useState<Employee[]>([]);
-
+  
   useEffect(() => {
-    const fetchEmployees = async () => {
-      const employeeData = await getEmployees();
-      setEmployees(employeeData);
-    };
-    
-    fetchEmployees();
-  }, []);
+    if (!open) {
+      // Reset form when dialog closes
+      setEmployeeName("");
+      setLeaveType("");
+      setStartDate("");
+      setEndDate("");
+      setReason("");
+    }
+  }, [open]);
 
   const handleSubmit = () => {
     if (!employeeName || !leaveType || !startDate || !endDate) {
@@ -66,23 +73,12 @@ export function AddLeaveRequestDialog() {
       description: "The leave request has been submitted successfully",
     });
 
-    // Reset form and close dialog
-    setEmployeeName("");
-    setLeaveType("");
-    setStartDate("");
-    setEndDate("");
-    setReason("");
-    setOpen(false);
+    // Call the callback to notify parent component
+    onLeaveAdded();
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="gap-1">
-          <Plus className="h-4 w-4" />
-          Add Request
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Add Leave Request</DialogTitle>
@@ -98,9 +94,9 @@ export function AddLeaveRequestDialog() {
                 <SelectValue placeholder="Select employee" />
               </SelectTrigger>
               <SelectContent>
-                {employees.map((employee) => (
-                  <SelectItem key={employee.id} value={employee.name}>
-                    {employee.name}
+                {employees.map((employee, index) => (
+                  <SelectItem key={index} value={employee}>
+                    {employee}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -152,7 +148,7 @@ export function AddLeaveRequestDialog() {
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
+          <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
           <Button onClick={handleSubmit}>Submit Request</Button>

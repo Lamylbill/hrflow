@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import NavbarLoggedIn from "@/components/NavbarLoggedIn";
 import Footer from "@/components/Footer";
@@ -9,7 +8,7 @@ import LeaveStats from "@/components/leave/LeaveStats";
 import LeaveFilters from "@/components/leave/LeaveFilters";
 import LeaveTabContent from "@/components/leave/LeaveTabContent";
 import { getLeaveRequests } from "@/utils/localStorage";
-import AddLeaveRequestDialog from "@/components/leave/AddLeaveRequestDialog";
+import { AddLeaveRequestDialog } from "@/components/leave/AddLeaveRequestDialog";
 
 const Leave = () => {
   const [searchTerm, setSearchTerm] = useState("");

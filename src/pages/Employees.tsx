@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Employee } from "@/types/employee";
 import NavbarLoggedIn from "@/components/NavbarLoggedIn";
-import { AddEmployeeDialog } from "@/components/employee/AddEmployeeDialog";
+import AddEmployeeDialog from "@/components/employee/AddEmployeeDialog";
 import EmployeeCard from "@/components/EmployeeCard";
 import { getEmployees } from "@/utils/localStorage";
 import { addEmployee, deleteEmployee, updateEmployee } from "@/utils/localStorage";

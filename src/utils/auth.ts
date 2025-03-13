@@ -2,10 +2,13 @@
 import { supabase } from "@/integrations/supabase/client";
 
 // Sign up a new user
-export const signUp = async (email: string, password: string) => {
+export const signUpWithEmail = async (email: string, password: string, metadata?: { name?: string; plan?: string }) => {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      data: metadata
+    }
   });
   
   if (error) throw error;
@@ -13,11 +16,11 @@ export const signUp = async (email: string, password: string) => {
   // Set localStorage for backward compatibility with existing code
   localStorage.setItem("isAuthenticated", "true");
   
-  return data;
+  return { data, error: null };
 };
 
 // Sign in an existing user
-export const signIn = async (email: string, password: string) => {
+export const loginWithEmail = async (email: string, password: string) => {
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -28,7 +31,7 @@ export const signIn = async (email: string, password: string) => {
   // Set localStorage for backward compatibility with existing code
   localStorage.setItem("isAuthenticated", "true");
   
-  return data;
+  return { data, error: null };
 };
 
 // Sign out the current user
