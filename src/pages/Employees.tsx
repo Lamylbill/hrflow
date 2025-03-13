@@ -86,6 +86,18 @@ const Employees = () => {
     }
   };
 
+  // Create a wrapper function that matches the expected prop name
+  const handleEmployeeAdded = () => {
+    // Refresh the employee list
+    const fetchEmployees = async () => {
+      const data = await getEmployees();
+      setEmployees(data);
+    };
+    
+    fetchEmployees();
+    setIsAddingEmployee(false);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <NavbarLoggedIn />
@@ -108,7 +120,11 @@ const Employees = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <AddEmployeeDialog onEmployeeAdd={handleAddEmployee} />
+            <AddEmployeeDialog 
+              open={isAddingEmployee}
+              onClose={() => setIsAddingEmployee(false)}
+              onEmployeeAdded={handleEmployeeAdded}
+            />
           </div>
         </div>
 
