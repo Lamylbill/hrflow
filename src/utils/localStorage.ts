@@ -316,7 +316,7 @@ export const initializeLocalStorage = async () => {
   }
 };
 
-// Employee CRUD operations
+// Employee CRUD operations - Now correctly handling promises
 export const getEmployees = async (): Promise<Employee[]> => {
   try {
     // Try to get from Supabase first
@@ -395,16 +395,14 @@ export const addEmployee = async (employee: Omit<Employee, "id">): Promise<Emplo
   }
   
   // Fallback to localStorage
-  const employees = getEmployees();
+  const employees = await getEmployees();
   const newEmployee = {
     ...employee,
     id: Date.now().toString(),
   };
   
-  employees.then(emps => {
-    emps.push(newEmployee);
-    localStorage.setItem("employees", JSON.stringify(emps));
-  });
+  employees.push(newEmployee);
+  localStorage.setItem("employees", JSON.stringify(employees));
   
   // Log activity
   logActivity({
@@ -417,47 +415,105 @@ export const addEmployee = async (employee: Omit<Employee, "id">): Promise<Emplo
   return newEmployee;
 };
 
-export const updateEmployee = (employee: Employee): Employee => {
-  const employees = getEmployees();
-  const index = employees.findIndex((e) => e.id === employee.id);
-  
-  if (index !== -1) {
-    employees[index] = employee;
-    localStorage.setItem("employees", JSON.stringify(employees));
+export const updateEmployee = async (employee: Employee): Promise<Employee> => {
+  try {
+    // Split name into first and last name
+    const nameParts = employee.name.split(' ');
+    const firstName = nameParts[0];
+    const lastName = nameParts.slice(1).join(' ');
+    
+    // Update in Supabase
+    const { error } = await supabase
+      .from('employees')
+      .update({
+        first_name: firstName,
+        last_name: lastName,
+        email: employee.email,
+        position: employee.position,
+        department: employee.department,
+        phone: employee.phone
+      })
+      .eq('id', employee.id);
+      
+    if (error) throw error;
     
     // Log activity
-    logActivity({
+    await logActivity({
       action: "update",
       module: "employees",
       description: `Updated employee: ${employee.name}`,
       timestamp: new Date().toISOString(),
     });
+    
+    return employee;
+  } catch (error) {
+    console.error("Error updating employee in Supabase:", error);
+    
+    // Fallback to localStorage
+    const employees = await getEmployees();
+    const index = employees.findIndex((e) => e.id === employee.id);
+    
+    if (index !== -1) {
+      employees[index] = employee;
+      localStorage.setItem("employees", JSON.stringify(employees));
+      
+      // Log activity
+      logActivity({
+        action: "update",
+        module: "employees",
+        description: `Updated employee: ${employee.name}`,
+        timestamp: new Date().toISOString(),
+      });
+    }
+    
+    return employee;
   }
-  
-  return employee;
 };
 
-export const deleteEmployee = (id: string): boolean => {
-  const employees = getEmployees();
-  const index = employees.findIndex((e) => e.id === id);
-  
-  if (index !== -1) {
-    const deletedEmployee = employees[index];
-    employees.splice(index, 1);
-    localStorage.setItem("employees", JSON.stringify(employees));
+export const deleteEmployee = async (id: string): Promise<boolean> => {
+  try {
+    // Delete from Supabase
+    const { error } = await supabase
+      .from('employees')
+      .delete()
+      .eq('id', id);
+      
+    if (error) throw error;
     
     // Log activity
-    logActivity({
+    await logActivity({
       action: "delete",
       module: "employees",
-      description: `Deleted employee: ${deletedEmployee.name}`,
+      description: `Deleted employee with ID: ${id}`,
       timestamp: new Date().toISOString(),
     });
     
     return true;
+  } catch (error) {
+    console.error("Error deleting employee from Supabase:", error);
+    
+    // Fallback to localStorage
+    const employees = await getEmployees();
+    const index = employees.findIndex((e) => e.id === id);
+    
+    if (index !== -1) {
+      const deletedEmployee = employees[index];
+      employees.splice(index, 1);
+      localStorage.setItem("employees", JSON.stringify(employees));
+      
+      // Log activity
+      logActivity({
+        action: "delete",
+        module: "employees",
+        description: `Deleted employee: ${deletedEmployee.name}`,
+        timestamp: new Date().toISOString(),
+      });
+      
+      return true;
+    }
+    
+    return false;
   }
-  
-  return false;
 };
 
 // Leave request operations

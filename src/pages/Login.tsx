@@ -6,6 +6,7 @@ import AnimatedButton from "@/components/AnimatedButton";
 import GlassCard from "@/components/GlassCard";
 import Footer from "@/components/Footer";
 import { Eye, EyeOff, LogIn, UserPlus } from "lucide-react";
+import { loginWithEmail, signUpWithEmail } from "@/utils/auth";
 
 const Login = () => {
   const location = useLocation();
@@ -27,35 +28,37 @@ const Login = () => {
     setActiveTab(isSignUp ? "signup" : "login");
   }, [isSignUp]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simple authentication - in a real app, this would be a backend call
-    setTimeout(() => {
-      if (username === "1234" && password === "1234") {
-        // Set auth state
-        localStorage.setItem("isAuthenticated", "true");
-        
-        toast({
-          title: "Login successful",
-          description: "Welcome to HR Flow!",
-          variant: "default",
-        });
-        
-        navigate("/dashboard");
-      } else {
-        toast({
-          title: "Login failed",
-          description: "Invalid username or password",
-          variant: "destructive",
-        });
+    try {
+      // Use the auth utility for login
+      const { error } = await loginWithEmail(email, password);
+      
+      if (error) {
+        throw error;
       }
+      
+      toast({
+        title: "Login successful",
+        description: "Welcome to HR Flow!",
+        variant: "default",
+      });
+      
+      navigate("/dashboard");
+    } catch (error: any) {
+      toast({
+        title: "Login failed",
+        description: error.message || "Invalid email or password",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 1000); // Simulate network request
+    }
   };
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
@@ -69,18 +72,34 @@ const Login = () => {
       return;
     }
 
-    // In a real app, this would register the user
-    setTimeout(() => {
+    try {
+      // Use the auth utility for sign up
+      const { error } = await signUpWithEmail(email, password, { 
+        name: username,
+        plan: selectedPlan || undefined 
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
       toast({
         title: "Account created",
-        description: "Your account has been created successfully. You can now log in.",
+        description: "Your account has been created successfully. Please check your email for verification.",
         variant: "default",
       });
-      setIsLoading(false);
       setActiveTab("login");
       // Update URL without the signup parameter
       navigate("/login", { replace: true });
-    }, 1500);
+    } catch (error: any) {
+      toast({
+        title: "Sign up failed",
+        description: error.message || "An error occurred during sign up",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -139,16 +158,16 @@ const Login = () => {
 
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div>
-                    <label htmlFor="username" className="block text-sm font-medium mb-1">
-                      Username
+                    <label htmlFor="email" className="block text-sm font-medium mb-1">
+                      Email
                     </label>
                     <input
-                      id="username"
-                      type="text"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       className="w-full px-4 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-                      placeholder="Enter your username"
+                      placeholder="Enter your email"
                       required
                     />
                   </div>
@@ -209,7 +228,7 @@ const Login = () => {
                   </AnimatedButton>
 
                   <div className="text-xs text-muted-foreground mt-4 text-center">
-                    Demo credentials: username "1234", password "1234"
+                    For testing, you can create an account using the Sign Up tab
                   </div>
                 </form>
               </>
