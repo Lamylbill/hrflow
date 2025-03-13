@@ -1,13 +1,14 @@
-// Helper functions for managing data persistence in localStorage
+// Helper functions for managing data persistence in localStorage and Supabase
 
 // Types
 import { Employee } from "@/types/employee";
 import { LeaveRequest, LeaveStatus } from "@/types/leave";
 import { PayrollData, PayrollStatus } from "@/types/payroll";
 import { ActivityLog } from "@/types/activity";
+import { supabase } from "@/integrations/supabase/client";
 
 // Initialize default data
-export const initializeLocalStorage = () => {
+export const initializeLocalStorage = async () => {
   // Only initialize if data doesn't exist
   if (!localStorage.getItem("employees")) {
     const defaultEmployees: Employee[] = [
@@ -85,6 +86,27 @@ export const initializeLocalStorage = () => {
       },
     ];
     localStorage.setItem("employees", JSON.stringify(defaultEmployees));
+    
+    // Also initialize in Supabase if table is empty
+    const { count } = await supabase
+      .from('employees')
+      .select('*', { count: 'exact', head: true });
+      
+    if (count === 0) {
+      // Convert local employee format to Supabase format
+      const supabaseEmployees = defaultEmployees.map(emp => ({
+        first_name: emp.name.split(' ')[0],
+        last_name: emp.name.split(' ').slice(1).join(' '),
+        email: emp.email,
+        position: emp.position,
+        department: emp.department,
+        phone: emp.phone,
+        hire_date: new Date().toISOString().split('T')[0], // Today as fallback
+        status: 'active'
+      }));
+      
+      await supabase.from('employees').insert(supabaseEmployees);
+    }
   }
 
   if (!localStorage.getItem("leaveRequests")) {
@@ -295,20 +317,94 @@ export const initializeLocalStorage = () => {
 };
 
 // Employee CRUD operations
-export const getEmployees = (): Employee[] => {
+export const getEmployees = async (): Promise<Employee[]> => {
+  try {
+    // Try to get from Supabase first
+    const { data, error } = await supabase
+      .from('employees')
+      .select('*');
+      
+    if (error) throw error;
+    
+    if (data && data.length > 0) {
+      // Map Supabase data to our Employee type
+      return data.map(emp => ({
+        id: emp.id,
+        name: `${emp.first_name} ${emp.last_name}`,
+        position: emp.position,
+        department: emp.department,
+        email: emp.email,
+        phone: emp.phone || '',
+      }));
+    }
+  } catch (error) {
+    console.error("Error fetching employees from Supabase:", error);
+  }
+  
+  // Fallback to localStorage
   const employees = localStorage.getItem("employees");
   return employees ? JSON.parse(employees) : [];
 };
 
-export const addEmployee = (employee: Omit<Employee, "id">): Employee => {
+export const addEmployee = async (employee: Omit<Employee, "id">): Promise<Employee> => {
+  try {
+    // Split name into first and last name
+    const nameParts = employee.name.split(' ');
+    const firstName = nameParts[0];
+    const lastName = nameParts.slice(1).join(' ');
+    
+    // Add to Supabase
+    const { data, error } = await supabase
+      .from('employees')
+      .insert({
+        first_name: firstName,
+        last_name: lastName,
+        email: employee.email,
+        position: employee.position,
+        department: employee.department,
+        phone: employee.phone,
+        hire_date: new Date().toISOString().split('T')[0], // Today
+        status: 'active'
+      })
+      .select();
+      
+    if (error) throw error;
+    
+    if (data && data.length > 0) {
+      const newEmployee = {
+        id: data[0].id,
+        name: `${data[0].first_name} ${data[0].last_name}`,
+        position: data[0].position,
+        department: data[0].department,
+        email: data[0].email,
+        phone: data[0].phone || '',
+      };
+      
+      // Log activity
+      await logActivity({
+        action: "create",
+        module: "employees",
+        description: `Added new employee: ${employee.name}`,
+        timestamp: new Date().toISOString(),
+      });
+      
+      return newEmployee;
+    }
+  } catch (error) {
+    console.error("Error adding employee to Supabase:", error);
+  }
+  
+  // Fallback to localStorage
   const employees = getEmployees();
   const newEmployee = {
     ...employee,
     id: Date.now().toString(),
   };
   
-  employees.push(newEmployee);
-  localStorage.setItem("employees", JSON.stringify(employees));
+  employees.then(emps => {
+    emps.push(newEmployee);
+    localStorage.setItem("employees", JSON.stringify(emps));
+  });
   
   // Log activity
   logActivity({
