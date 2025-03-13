@@ -13,8 +13,17 @@ export const initializeLocalStorage = async () => {
   const { data: sessionData } = await supabase.auth.getSession();
   const isLoggedIn = !!sessionData.session;
   
-  // Only initialize if data doesn't exist AND we're either in development OR not logged in
-  if (!localStorage.getItem("employees")) {
+  // Get the current user's email to check if it's the demo account
+  let isDemoUser = false;
+  if (isLoggedIn && sessionData.session?.user) {
+    const userEmail = sessionData.session.user.email;
+    isDemoUser = userEmail === "1234" || userEmail === "demo@example.com";
+  }
+  
+  // Only initialize demo data if this is the demo user OR we're in development without a logged-in user
+  const shouldLoadDemoData = (!isLoggedIn) || isDemoUser;
+  
+  if (!localStorage.getItem("employees") && shouldLoadDemoData) {
     const defaultEmployees: Employee[] = [
       {
         id: "1",
@@ -90,10 +99,9 @@ export const initializeLocalStorage = async () => {
       },
     ];
     
-    // For development or first-time setup only
     localStorage.setItem("employees", JSON.stringify(defaultEmployees));
     
-    // Only initialize Supabase if we're not in production with a logged-in user
+    // Only initialize in Supabase if we're not in production with a logged-in user
     if (!isLoggedIn) {
       // Also initialize in Supabase if table is empty
       const { count } = await supabase
@@ -116,9 +124,12 @@ export const initializeLocalStorage = async () => {
         await supabase.from('employees').insert(supabaseEmployees);
       }
     }
+  } else if (!localStorage.getItem("employees") && isLoggedIn) {
+    // For non-demo users, initialize with empty array
+    localStorage.setItem("employees", JSON.stringify([]));
   }
 
-  if (!localStorage.getItem("leaveRequests")) {
+  if (!localStorage.getItem("leaveRequests") && shouldLoadDemoData) {
     const defaultLeaveRequests: LeaveRequest[] = [
       {
         id: "1",
@@ -203,9 +214,12 @@ export const initializeLocalStorage = async () => {
       },
     ];
     localStorage.setItem("leaveRequests", JSON.stringify(defaultLeaveRequests));
+  } else if (!localStorage.getItem("leaveRequests") && isLoggedIn) {
+    // For non-demo users, initialize with empty array
+    localStorage.setItem("leaveRequests", JSON.stringify([]));
   }
 
-  if (!localStorage.getItem("payrollData")) {
+  if (!localStorage.getItem("payrollData") && shouldLoadDemoData) {
     const defaultPayrollData: PayrollData[] = [
       {
         id: "1",
@@ -317,6 +331,9 @@ export const initializeLocalStorage = async () => {
       }
     ];
     localStorage.setItem("payrollData", JSON.stringify(defaultPayrollData));
+  } else if (!localStorage.getItem("payrollData") && isLoggedIn) {
+    // For non-demo users, initialize with empty array
+    localStorage.setItem("payrollData", JSON.stringify([]));
   }
 
   if (!localStorage.getItem("activityLogs")) {

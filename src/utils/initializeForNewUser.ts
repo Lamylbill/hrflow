@@ -6,10 +6,19 @@ import { supabase } from "@/integrations/supabase/client";
 export const initializeForNewUser = async (userId: string) => {
   console.log("Initializing data for new user:", userId);
   
-  // We don't need to do anything specific here since our data is already 
-  // segmented by user ID through Row Level Security policies
+  // Clear any localStorage data that might have been set globally
+  localStorage.removeItem("employees");
+  localStorage.removeItem("leaveRequests");
+  localStorage.removeItem("payrollData");
+  localStorage.removeItem("activityLogs");
   
-  // If needed, we could create initial empty records for the user here
+  // Initialize with empty arrays for the new user
+  localStorage.setItem("employees", JSON.stringify([]));
+  localStorage.setItem("leaveRequests", JSON.stringify([]));
+  localStorage.setItem("payrollData", JSON.stringify([]));
+  localStorage.setItem("activityLogs", JSON.stringify([]));
+  
+  // You could also initialize empty records in Supabase here if needed
   
   return true;
 };
