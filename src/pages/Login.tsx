@@ -6,13 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { signIn, signUp } from "@/utils/auth";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,26 +22,22 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const success = await login(email, password);
+      const { data, error } = await signIn(email, password);
       
-      if (success) {
-        toast({
-          title: "Login successful",
-          description: "Welcome back!",
-        });
-        navigate("/dashboard");
-      } else {
-        toast({
-          title: "Login failed",
-          description: "Please check your credentials and try again.",
-          variant: "destructive",
-        });
+      if (error) {
+        throw error;
       }
-    } catch (error) {
+      
+      toast({
+        title: "Login successful",
+        description: "Welcome back!",
+      });
+      navigate("/dashboard");
+    } catch (error: any) {
       console.error("Login error:", error);
       toast({
-        title: "Login error",
-        description: "An unexpected error occurred. Please try again.",
+        title: "Login failed",
+        description: error.message || "Please check your credentials and try again.",
         variant: "destructive",
       });
     } finally {
@@ -56,33 +50,21 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name
-          }
-        }
-      });
+      const { data, error } = await signUp(email, password, { name });
 
       if (error) {
-        toast({
-          title: "Signup failed",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Signup successful",
-          description: "Please check your email to confirm your account.",
-        });
-        navigate("/dashboard");
+        throw error;
       }
+
+      toast({
+        title: "Signup successful",
+        description: "Welcome to HR Management!",
+      });
+      navigate("/dashboard");
     } catch (error: any) {
       console.error("Signup error:", error);
       toast({
-        title: "Signup error",
+        title: "Signup failed",
         description: error.message || "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });

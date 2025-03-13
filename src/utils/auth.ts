@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { initializeForNewUser } from "./initializeForNewUser";
 
 // Sign up a new user
 export const signUp = async (email: string, password: string, metadata?: { name?: string; plan?: string }) => {
@@ -12,6 +13,11 @@ export const signUp = async (email: string, password: string, metadata?: { name?
   });
   
   if (error) throw error;
+  
+  // Initialize data for the new user
+  if (data.user) {
+    await initializeForNewUser(data.user.id);
+  }
   
   // Set localStorage for backward compatibility with existing code
   localStorage.setItem("isAuthenticated", "true");

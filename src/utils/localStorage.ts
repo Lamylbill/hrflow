@@ -7,9 +7,13 @@ import { PayrollData, PayrollStatus } from "@/types/payroll";
 import { ActivityLog } from "@/types/activity";
 import { supabase } from "@/integrations/supabase/client";
 
-// Initialize default data
+// Initialize default data only for first-time setup or development
 export const initializeLocalStorage = async () => {
-  // Only initialize if data doesn't exist
+  // Check if we're in a production environment and a user is logged in
+  const { data: sessionData } = await supabase.auth.getSession();
+  const isLoggedIn = !!sessionData.session;
+  
+  // Only initialize if data doesn't exist AND we're either in development OR not logged in
   if (!localStorage.getItem("employees")) {
     const defaultEmployees: Employee[] = [
       {
@@ -85,27 +89,32 @@ export const initializeLocalStorage = async () => {
         phone: "+1 (555) 901-2345",
       },
     ];
+    
+    // For development or first-time setup only
     localStorage.setItem("employees", JSON.stringify(defaultEmployees));
     
-    // Also initialize in Supabase if table is empty
-    const { count } = await supabase
-      .from('employees')
-      .select('*', { count: 'exact', head: true });
-      
-    if (count === 0) {
-      // Convert local employee format to Supabase format
-      const supabaseEmployees = defaultEmployees.map(emp => ({
-        first_name: emp.name.split(' ')[0],
-        last_name: emp.name.split(' ').slice(1).join(' '),
-        email: emp.email,
-        position: emp.position,
-        department: emp.department,
-        phone: emp.phone,
-        hire_date: new Date().toISOString().split('T')[0], // Today as fallback
-        status: 'active'
-      }));
-      
-      await supabase.from('employees').insert(supabaseEmployees);
+    // Only initialize Supabase if we're not in production with a logged-in user
+    if (!isLoggedIn) {
+      // Also initialize in Supabase if table is empty
+      const { count } = await supabase
+        .from('employees')
+        .select('*', { count: 'exact', head: true });
+        
+      if (count === 0) {
+        // Convert local employee format to Supabase format
+        const supabaseEmployees = defaultEmployees.map(emp => ({
+          first_name: emp.name.split(' ')[0],
+          last_name: emp.name.split(' ').slice(1).join(' '),
+          email: emp.email,
+          position: emp.position,
+          department: emp.department,
+          phone: emp.phone,
+          hire_date: new Date().toISOString().split('T')[0], // Today as fallback
+          status: 'active'
+        }));
+        
+        await supabase.from('employees').insert(supabaseEmployees);
+      }
     }
   }
 
