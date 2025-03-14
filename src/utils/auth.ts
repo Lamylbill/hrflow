@@ -33,12 +33,8 @@ export const signIn = async (email: string, password: string) => {
   
   if (error) throw error;
   
-  // Check if this is the demo account and initialize demo data if needed
-  const isDemoUser = email === "1234" || email === "demo@example.com";
-  
-  if (!isDemoUser && data.user) {
-    // For non-demo users, make sure they have empty data structures
-    // This is a safety measure in case they've been shown demo data before
+  // For all users, make sure they have empty data structures
+  if (data.user) {
     await initializeForNewUser(data.user.id);
   }
   

@@ -18,7 +18,5 @@ export const initializeForNewUser = async (userId: string) => {
   localStorage.setItem("payrollData", JSON.stringify([]));
   localStorage.setItem("activityLogs", JSON.stringify([]));
   
-  // You could also initialize empty records in Supabase here if needed
-  
   return true;
 };
