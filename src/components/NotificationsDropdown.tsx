@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Bell, Check, X } from "lucide-react";
 
@@ -11,7 +10,11 @@ interface Notification {
   type: "info" | "warning" | "success";
 }
 
-const NotificationsDropdown = () => {
+interface NotificationsDropdownProps {
+  onMouseLeave?: () => void;
+}
+
+const NotificationsDropdown = ({ onMouseLeave }: NotificationsDropdownProps) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
@@ -105,7 +108,10 @@ const NotificationsDropdown = () => {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <div className="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg z-50 overflow-hidden max-h-[80vh] flex flex-col">
+    <div 
+      className="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg z-50 overflow-hidden max-h-[80vh] flex flex-col"
+      onMouseLeave={onMouseLeave}
+    >
       <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-gray-50">
         <div className="flex items-center">
           <Bell className="h-4 w-4 mr-2 text-primary" />

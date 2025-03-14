@@ -7,6 +7,7 @@ import Employees from "./pages/Employees";
 import Leave from "./pages/Leave";
 import Payroll from "./pages/Payroll";
 import ActivityLog from "./pages/ActivityLog";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -61,6 +62,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <ActivityLog />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings/:section"
+            element={
+              <ProtectedRoute>
+                <Settings />
               </ProtectedRoute>
             }
           />

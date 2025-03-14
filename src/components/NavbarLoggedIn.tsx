@@ -8,16 +8,29 @@ import {
   ClipboardList,
   LogOut,
   Bell,
+  Settings,
+  User,
+  Key,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { signOut } from "@/utils/auth";
 import NotificationsDropdown from "./NotificationsDropdown";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const NavbarLoggedIn = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [showNotifications, setShowNotifications] = useState(false);
+  const notificationRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = async () => {
     try {
@@ -39,9 +52,23 @@ const NavbarLoggedIn = () => {
     }
   };
 
-  const toggleNotifications = () => {
-    setShowNotifications(!showNotifications);
-  };
+  // Handle clicking outside to close notifications dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Get user information from localStorage
+  const userName = localStorage.getItem("userName") || "User";
+  const userInitials = userName.split(" ").map(name => name[0]).join("") || "U";
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
@@ -130,34 +157,55 @@ const NavbarLoggedIn = () => {
           </nav>
         </div>
         <div className="flex items-center space-x-3">
-          <div className="relative">
+          <div className="relative" ref={notificationRef}>
             <button
               className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
-              onClick={toggleNotifications}
+              onMouseEnter={() => setShowNotifications(true)}
               aria-label="Notifications"
             >
               <Bell className="h-5 w-5" />
               <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
             </button>
-            {showNotifications && <NotificationsDropdown />}
+            {showNotifications && <NotificationsDropdown onMouseLeave={() => setShowNotifications(false)} />}
           </div>
           <div className="hidden md:flex items-center">
-            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center mr-2">
-              <span className="text-sm font-medium text-primary">
-                {localStorage.getItem("userName")?.split(" ").map(name => name[0]).join("") || "U"}
-              </span>
-            </div>
-            <span className="text-sm font-medium mr-4">
-              {localStorage.getItem("userName") || "User"}
-            </span>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="focus:outline-none">
+                <div className="flex items-center hover:bg-secondary/50 p-2 rounded-lg cursor-pointer">
+                  <Avatar className="h-8 w-8 mr-2">
+                    <AvatarImage src={localStorage.getItem("userAvatar") || ""} alt={userName} />
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      {userInitials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-medium">
+                    {userName}
+                  </span>
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate("/settings/profile")}>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/settings")}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/settings/password")}>
+                  <Key className="mr-2 h-4 w-4" />
+                  <span>Change Password</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="text-red-500 hover:text-red-600 hover:bg-red-50">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-          <button
-            className="px-3 py-2 text-sm text-red-500 hover:text-red-600 hover:bg-secondary/50 rounded-md transition-colors flex items-center"
-            onClick={handleLogout}
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Logout
-          </button>
         </div>
       </div>
     </div>
