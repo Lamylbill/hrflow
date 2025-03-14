@@ -4,149 +4,128 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { Camera, X } from "lucide-react";
 
 const ProfileSettings = () => {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [position, setPosition] = useState("");
-  const [department, setDepartment] = useState("");
+  const [name, setName] = useState("Admin User");
+  const [email, setEmail] = useState("admin@example.com");
+  const [phone, setPhone] = useState("+1 (555) 123-4567");
   const [avatarUrl, setAvatarUrl] = useState("");
-  
-  // Load user details on component mount
-  useEffect(() => {
-    setName(localStorage.getItem("userName") || "");
-    setEmail(localStorage.getItem("userEmail") || "");
-    setPosition(localStorage.getItem("userPosition") || "");
-    setDepartment(localStorage.getItem("userDepartment") || "");
-    setAvatarUrl(localStorage.getItem("userAvatar") || "");
-  }, []);
+  const [isEditing, setIsEditing] = useState(false);
 
-  const handleSaveProfile = () => {
-    // Save to localStorage
-    localStorage.setItem("userName", name);
-    localStorage.setItem("userEmail", email);
-    localStorage.setItem("userPosition", position);
-    localStorage.setItem("userDepartment", department);
-    
+  const handleSave = () => {
+    // Simulate saving profile changes
     toast({
       title: "Profile updated",
-      description: "Your profile has been updated successfully.",
+      description: "Your profile information has been successfully updated.",
     });
+    setIsEditing(false);
   };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     
     if (file) {
-      // Convert to base64 for storage in localStorage
       const reader = new FileReader();
       reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setAvatarUrl(base64String);
-        localStorage.setItem("userAvatar", base64String);
+        const base64 = reader.result as string;
+        setAvatarUrl(base64);
       };
       reader.readAsDataURL(file);
     }
-  };
-  
-  const removeAvatar = () => {
-    setAvatarUrl("");
-    localStorage.removeItem("userAvatar");
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold">Profile Information</h2>
+        <h3 className="text-lg font-medium">Profile Settings</h3>
         <p className="text-sm text-muted-foreground">
-          Update your personal information and profile picture.
+          Manage your account details and preferences.
         </p>
       </div>
       
-      <div className="flex flex-col md:flex-row gap-6">
-        <div className="w-full md:w-1/3 flex flex-col items-center">
-          <Avatar className="w-32 h-32 mb-4">
-            <AvatarImage src={avatarUrl} alt={name} />
-            <AvatarFallback className="bg-primary/10 text-primary text-xl">
-              {name.split(" ").map(n => n[0]).join("")}
-            </AvatarFallback>
-          </Avatar>
-          
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="relative">
-              <input 
-                type="file" 
-                className="absolute inset-0 w-full opacity-0 cursor-pointer" 
-                accept="image/*"
-                onChange={handleAvatarChange}
-              />
-              <Camera className="mr-2 h-4 w-4" />
-              Change
-            </Button>
-            {avatarUrl && (
-              <Button variant="outline" size="sm" onClick={removeAvatar}>
-                <X className="mr-2 h-4 w-4" />
-                Remove
-              </Button>
-            )}
+      <Card>
+        <CardHeader>
+          <CardTitle>Your Profile</CardTitle>
+          <CardDescription>
+            This information will be displayed throughout the application.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex justify-center">
+            <div className="relative">
+              <Avatar className="h-24 w-24">
+                <AvatarImage src={avatarUrl} />
+                <AvatarFallback className="text-lg">{name.split(" ").map(n => n[0]).join("")}</AvatarFallback>
+              </Avatar>
+              {isEditing && (
+                <div className="absolute bottom-0 right-0">
+                  <div className="relative">
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      className="h-8 w-8 p-0 rounded-full"
+                    >
+                      <span className="sr-only">Change avatar</span>
+                      <input 
+                        type="file" 
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                        accept="image/*"
+                        onChange={handleAvatarChange}
+                      />
+                      <span className="text-xs font-bold">+</span>
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
           
-          <p className="text-xs text-muted-foreground mt-2 text-center">
-            Recommended: Square JPG, PNG. Max 1MB.
-          </p>
-        </div>
-        
-        <div className="flex-1 space-y-4">
-          <div className="grid gap-4">
+          <div className="space-y-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="John Doe"
+              <Label htmlFor="name">Name</Label>
+              <Input 
+                id="name" 
+                value={name} 
+                onChange={(e) => setName(e.target.value)} 
+                disabled={!isEditing}
               />
             </div>
             
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="john.doe@example.com"
+              <Input 
+                id="email" 
+                type="email" 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)} 
+                disabled={!isEditing}
               />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="position">Position</Label>
-                <Input
-                  id="position"
-                  value={position}
-                  onChange={(e) => setPosition(e.target.value)}
-                  placeholder="HR Manager"
-                />
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="department">Department</Label>
-                <Input
-                  id="department"
-                  value={department}
-                  onChange={(e) => setDepartment(e.target.value)}
-                  placeholder="Human Resources"
-                />
-              </div>
+            <div className="grid gap-2">
+              <Label htmlFor="phone">Phone</Label>
+              <Input 
+                id="phone" 
+                value={phone} 
+                onChange={(e) => setPhone(e.target.value)} 
+                disabled={!isEditing}
+              />
             </div>
           </div>
-          
-          <Button onClick={handleSaveProfile}>Save Changes</Button>
-        </div>
-      </div>
+        </CardContent>
+        <CardFooter className="flex justify-between">
+          {isEditing ? (
+            <>
+              <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+              <Button onClick={handleSave}>Save Changes</Button>
+            </>
+          ) : (
+            <Button onClick={() => setIsEditing(true)}>Edit Profile</Button>
+          )}
+        </CardFooter>
+      </Card>
     </div>
   );
 };

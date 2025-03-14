@@ -19,25 +19,48 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { addLeaveRequest } from "@/utils/localStorage";
+import { addLeaveRequest, getEmployees } from "@/utils/localStorage";
 import { toast } from "@/hooks/use-toast";
 import { Plus } from "lucide-react";
 import { Employee } from "@/types/employee";
-import { getEmployees } from "@/utils/localStorage";
 
 interface AddLeaveRequestDialogProps {
   open: boolean;
   onClose: () => void;
   onLeaveAdded: () => void;
-  employees: string[];
 }
 
-export function AddLeaveRequestDialog({ open, onClose, onLeaveAdded, employees }: AddLeaveRequestDialogProps) {
+export function AddLeaveRequestDialog({ open, onClose, onLeaveAdded }: AddLeaveRequestDialogProps) {
   const [employeeName, setEmployeeName] = useState("");
   const [leaveType, setLeaveType] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [reason, setReason] = useState("");
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  
+  // Load employees on mount
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const employeeData = await getEmployees();
+        setEmployees(employeeData);
+        
+        // If there's at least one employee, set the first one as default
+        if (employeeData.length > 0 && !employeeName) {
+          setEmployeeName(employeeData[0].name);
+        }
+      } catch (error) {
+        console.error("Error loading employees:", error);
+        toast({
+          title: "Error",
+          description: "Could not load employee data",
+          variant: "destructive",
+        });
+      }
+    };
+    
+    fetchEmployees();
+  }, [open]);
   
   useEffect(() => {
     if (!open) {
@@ -69,8 +92,8 @@ export function AddLeaveRequestDialog({ open, onClose, onLeaveAdded, employees }
     });
 
     toast({
-      title: "Leave request submitted",
-      description: "The leave request has been submitted successfully",
+      title: "Leave added",
+      description: "The leave record has been added successfully",
     });
 
     // Call the callback to notify parent component
@@ -81,9 +104,9 @@ export function AddLeaveRequestDialog({ open, onClose, onLeaveAdded, employees }
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add Leave Request</DialogTitle>
+          <DialogTitle>Add Leave</DialogTitle>
           <DialogDescription>
-            Submit a new leave request. All fields marked with * are required.
+            Add a new leave record for an employee. All fields marked with * are required.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -94,9 +117,9 @@ export function AddLeaveRequestDialog({ open, onClose, onLeaveAdded, employees }
                 <SelectValue placeholder="Select employee" />
               </SelectTrigger>
               <SelectContent>
-                {employees.map((employee, index) => (
-                  <SelectItem key={index} value={employee}>
-                    {employee}
+                {employees.map((employee) => (
+                  <SelectItem key={employee.id} value={employee.name}>
+                    {employee.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -141,7 +164,7 @@ export function AddLeaveRequestDialog({ open, onClose, onLeaveAdded, employees }
             <Label htmlFor="reason">Reason</Label>
             <Input
               id="reason"
-              placeholder="Brief explanation for the leave request"
+              placeholder="Brief explanation for the leave"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
             />
@@ -151,7 +174,7 @@ export function AddLeaveRequestDialog({ open, onClose, onLeaveAdded, employees }
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit}>Submit Request</Button>
+          <Button onClick={handleSubmit}>Add Leave</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
