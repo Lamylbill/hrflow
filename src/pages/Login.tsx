@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,10 +13,19 @@ import { ArrowLeft } from "lucide-react";
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const defaultTab = searchParams.get("signup") === "true" ? "signup" : "login";
+
+  useEffect(() => {
+    // Set the initial tab based on URL params
+    if (searchParams.get("signup") === "true") {
+      document.querySelector('[data-state="inactive"][value="signup"]')?.click();
+    }
+  }, [searchParams]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,23 +85,30 @@ const Login = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
-      {/* Return to Main Page Banner */}
-      <div className="bg-primary py-3 px-4">
-        <div className="max-w-7xl mx-auto flex items-center">
-          <Link to="/" className="text-white flex items-center hover:text-white/90 transition-colors">
-            <ArrowLeft size={18} className="mr-2" />
-            <span>Return to HR Flow Home</span>
+      {/* Header Navigation Banner - Styled like the landing page */}
+      <nav className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 py-4 bg-white shadow-sm">
+        <div className="hr-container flex items-center justify-between">
+          <Link
+            to="/"
+            className="flex items-center space-x-2 text-primary font-semibold text-xl"
+          >
+            <span className="bg-primary text-white px-2 py-1 rounded-md">HR</span>
+            <span className="tracking-tight">Flow</span>
+          </Link>
+          
+          <Link to="/" className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors">
+            Return to Home
           </Link>
         </div>
-      </div>
+      </nav>
       
-      <div className="flex-grow flex items-center justify-center py-10">
+      <div className="flex-grow flex items-center justify-center py-10 pt-24">
         <Card className="w-full max-w-md shadow-lg">
           <CardHeader className="text-center">
             <CardTitle className="text-3xl">HR Management</CardTitle>
             <CardDescription>Login to access your HR dashboard</CardDescription>
           </CardHeader>
-          <Tabs defaultValue="login" className="w-full">
+          <Tabs defaultValue={defaultTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">Login</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
