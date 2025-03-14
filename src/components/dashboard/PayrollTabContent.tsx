@@ -34,11 +34,11 @@ const PayrollTabContent = () => {
   // Calculate totals
   const totalPending = payrollData
     .filter(item => item.status === "pending")
-    .reduce((sum, item) => sum + Number(item.amount), 0);
+    .reduce((sum, item) => sum + (item.amount || item.netPay), 0);
 
   const totalPaid = payrollData
     .filter(item => item.status === "paid")
-    .reduce((sum, item) => sum + Number(item.amount), 0);
+    .reduce((sum, item) => sum + (item.amount || item.netPay), 0);
 
   // Get current month data
   const currentDate = new Date();
@@ -126,10 +126,10 @@ const PayrollTabContent = () => {
                         <div className="text-sm font-medium text-gray-900">{item.employeeName}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {item.period}
+                        {item.period || `${new Date().getMonth() + 1}/${new Date().getFullYear()}`}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {formatCurrency(Number(item.amount))}
+                        {formatCurrency(Number(item.amount || item.netPay))}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">

@@ -19,11 +19,13 @@ const Login = () => {
   const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const defaultTab = searchParams.get("signup") === "true" ? "signup" : "login";
+  // Track active tab to handle changes from URL params
+  const [activeTab, setActiveTab] = useState(defaultTab);
 
   useEffect(() => {
-    // Set the initial tab based on URL params
+    // Set the active tab based on URL params
     if (searchParams.get("signup") === "true") {
-      document.querySelector('[data-state="inactive"][value="signup"]')?.click();
+      setActiveTab("signup");
     }
   }, [searchParams]);
 
@@ -108,7 +110,7 @@ const Login = () => {
             <CardTitle className="text-3xl">HR Management</CardTitle>
             <CardDescription>Login to access your HR dashboard</CardDescription>
           </CardHeader>
-          <Tabs defaultValue={defaultTab} className="w-full">
+          <Tabs defaultValue={defaultTab} value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">Login</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>

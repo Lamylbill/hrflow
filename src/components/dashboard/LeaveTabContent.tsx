@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Calendar, Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,6 @@ const LeaveTabContent = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Load leave requests
     const loadLeaveRequests = () => {
       try {
         const data = getLeaveRequests();
@@ -25,12 +23,10 @@ const LeaveTabContent = () => {
     loadLeaveRequests();
   }, []);
 
-  // Count by status
   const pendingCount = leaveRequests.filter(request => request.status === "pending").length;
   const approvedCount = leaveRequests.filter(request => request.status === "approved").length;
   const rejectedCount = leaveRequests.filter(request => request.status === "rejected").length;
 
-  // Get leave requests for current month
   const currentDate = new Date();
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
@@ -40,7 +36,6 @@ const LeaveTabContent = () => {
     return startDate.getMonth() === currentMonth && startDate.getFullYear() === currentYear;
   });
 
-  // Days until next leave
   const upcomingLeave = leaveRequests
     .filter(request => request.status === "approved" && new Date(request.startDate) > currentDate)
     .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())[0];
@@ -111,7 +106,7 @@ const LeaveTabContent = () => {
                 <div>
                   <h3 className="font-medium text-indigo-900">Upcoming Leave</h3>
                   <p className="text-indigo-700 mt-1">
-                    {upcomingLeave.employeeName} will be on {upcomingLeave.leaveType.toLowerCase()} leave 
+                    {upcomingLeave.employeeName} will be on {upcomingLeave.type.toLowerCase()} leave 
                     {daysUntilNextLeave === 0 ? " today" : 
                      daysUntilNextLeave === 1 ? " tomorrow" : 
                      ` in ${daysUntilNextLeave} days`} 
@@ -146,8 +141,8 @@ const LeaveTabContent = () => {
                           <div className="text-sm font-medium text-gray-900">{request.employeeName}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getLeaveTypeColor(request.leaveType)}`}>
-                            {request.leaveType}
+                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getLeaveTypeColor(request.type)}`}>
+                            {request.type}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

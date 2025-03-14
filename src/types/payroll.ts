@@ -12,4 +12,6 @@ export interface PayrollData {
   netPay: number;
   paymentDate: string;
   status: PayrollStatus;
+  amount?: number; // Add this property to fix errors
+  period?: string; // Add this property to fix errors
 }
