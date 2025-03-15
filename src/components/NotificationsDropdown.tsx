@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Bell, Check, X } from "lucide-react";
 
@@ -11,10 +12,12 @@ interface Notification {
 }
 
 interface NotificationsDropdownProps {
+  showDropdown?: boolean;
+  onToggle?: (show: boolean) => void;
   onMouseLeave?: () => void;
 }
 
-const NotificationsDropdown = ({ onMouseLeave }: NotificationsDropdownProps) => {
+const NotificationsDropdown = ({ showDropdown, onToggle, onMouseLeave }: NotificationsDropdownProps) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {

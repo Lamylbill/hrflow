@@ -38,7 +38,6 @@ const NavbarLoggedIn = () => {
   };
 
   useEffect(() => {
-    // Close mobile menu when route changes
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
@@ -110,7 +109,7 @@ const NavbarLoggedIn = () => {
           <div className="flex items-center">
             <NotificationsDropdown 
               showDropdown={showNotifications} 
-              onToggle={(show) => setShowNotifications(show)}
+              onToggle={setShowNotifications}
             />
 
             <DropdownMenu>
@@ -153,7 +152,6 @@ const NavbarLoggedIn = () => {
         </div>
       </div>
 
-      {/* Mobile menu */}
       {isMobile && mobileMenuOpen && (
         <div className="sm:hidden bg-background border-t">
           <div className="px-2 pt-2 pb-3 space-y-1">
