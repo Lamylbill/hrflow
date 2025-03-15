@@ -2,10 +2,10 @@
 import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Upload, Download, X, FileText, CheckCircle } from "lucide-react";
+import { Upload, Download, X, FileText, CheckCircle, AlertCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { LeaveRequest } from "@/types/leave";
-import { addLeaveRequest } from "@/utils/localStorage";
+import { addLeaveRequest, getLeaveRequests, logActivity } from "@/utils/localStorage";
 
 interface MassUploadLeaveDialogProps {
   open: boolean;
@@ -21,6 +21,8 @@ export function MassUploadLeaveDialog({
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [duplicates, setDuplicates] = useState<string[]>([]);
+  const [showDuplicates, setShowDuplicates] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,6 +40,8 @@ export function MassUploadLeaveDialog({
       
       setFile(selectedFile);
       setUploadSuccess(false);
+      setDuplicates([]);
+      setShowDuplicates(false);
     }
   };
 
@@ -62,6 +66,8 @@ export function MassUploadLeaveDialog({
       
       setFile(droppedFile);
       setUploadSuccess(false);
+      setDuplicates([]);
+      setShowDuplicates(false);
     }
   };
 
@@ -71,6 +77,9 @@ export function MassUploadLeaveDialog({
     setIsUploading(true);
     
     try {
+      // Fetch existing leave requests to check for duplicates
+      const existingLeaveRequests = await getLeaveRequests();
+      
       // Read the CSV file
       const reader = new FileReader();
       
@@ -92,6 +101,7 @@ export function MassUploadLeaveDialog({
         
         // Skip header row
         const leaveRequests: Omit<LeaveRequest, "id" | "status">[] = [];
+        const duplicateEntries: string[] = [];
         
         for (let i = 1; i < rows.length; i++) {
           if (!rows[i].trim()) continue; // Skip empty rows
@@ -119,18 +129,51 @@ export function MassUploadLeaveDialog({
             continue; // Skip if dates are invalid
           }
           
-          leaveRequests.push(leaveRequest);
+          // Check for duplicates - same employee with overlapping date ranges
+          const isDuplicate = existingLeaveRequests.some(
+            existing => 
+              existing.employeeName.toLowerCase() === leaveRequest.employeeName.toLowerCase() && (
+                (new Date(leaveRequest.startDate) <= new Date(existing.endDate) && 
+                 new Date(leaveRequest.endDate) >= new Date(existing.startDate))
+              )
+          );
+          
+          if (isDuplicate) {
+            duplicateEntries.push(`${leaveRequest.employeeName} (${leaveRequest.startDate} to ${leaveRequest.endDate})`);
+          } else {
+            leaveRequests.push(leaveRequest);
+          }
         }
         
-        // Add all leave requests
+        // Add all non-duplicate leave requests
         for (const leave of leaveRequests) {
           await addLeaveRequest(leave);
         }
         
-        toast({
-          title: "Upload successful",
-          description: `${leaveRequests.length} leave requests have been added.`,
-        });
+        // Log activity about duplicates if any
+        if (duplicateEntries.length > 0) {
+          setDuplicates(duplicateEntries);
+          
+          await logActivity({
+            action: "Duplicate leave requests detected during mass upload",
+            entityType: "leave",
+            details: {
+              duplicates: duplicateEntries,
+              totalDuplicates: duplicateEntries.length,
+              totalUploaded: leaveRequests.length
+            }
+          });
+          
+          toast({
+            title: "Upload partially successful",
+            description: `${leaveRequests.length} leave requests added. ${duplicateEntries.length} duplicates skipped.`,
+          });
+        } else {
+          toast({
+            title: "Upload successful",
+            description: `${leaveRequests.length} leave requests have been added.`,
+          });
+        }
         
         setUploadSuccess(true);
         onLeaveUploaded();
@@ -173,6 +216,8 @@ export function MassUploadLeaveDialog({
   const resetUpload = () => {
     setFile(null);
     setUploadSuccess(false);
+    setDuplicates([]);
+    setShowDuplicates(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -195,6 +240,36 @@ export function MassUploadLeaveDialog({
             <p className="text-sm text-muted-foreground mb-4">
               Your leave requests have been successfully added to the system.
             </p>
+            
+            {duplicates.length > 0 && (
+              <div className="mb-4 w-full">
+                <div 
+                  className="flex items-center justify-between bg-amber-50 text-amber-800 px-4 py-2 rounded-md cursor-pointer"
+                  onClick={() => setShowDuplicates(!showDuplicates)}
+                >
+                  <div className="flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-2" />
+                    <span>
+                      {duplicates.length} duplicate {duplicates.length === 1 ? 'entry' : 'entries'} skipped
+                    </span>
+                  </div>
+                  <Button variant="ghost" size="sm">
+                    {showDuplicates ? 'Hide' : 'Show'}
+                  </Button>
+                </div>
+                
+                {showDuplicates && (
+                  <div className="mt-2 bg-muted p-2 rounded-md max-h-40 overflow-y-auto">
+                    <ul className="text-xs space-y-1">
+                      {duplicates.map((entry, index) => (
+                        <li key={index} className="text-left">• {entry}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+            
             <div className="flex space-x-2">
               <Button variant="outline" onClick={resetUpload}>
                 Upload Another File

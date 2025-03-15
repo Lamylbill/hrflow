@@ -27,14 +27,23 @@ const Employees = () => {
 
   // Fetch employees on mount
   useEffect(() => {
-    const fetchEmployees = async () => {
+    fetchEmployees();
+  }, []);
+
+  const fetchEmployees = async () => {
+    try {
       const data = await getEmployees();
       setEmployees(data);
       setFilteredEmployees(data);
-    };
-    
-    fetchEmployees();
-  }, []);
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load employees. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Filter employees when search query changes
   useEffect(() => {
@@ -57,9 +66,8 @@ const Employees = () => {
 
   const handleAddEmployee = async (employee: Omit<Employee, "id">) => {
     try {
-      const newEmployee = await addEmployee(employee);
-      const updatedEmployees = await getEmployees();
-      setEmployees(updatedEmployees);
+      await addEmployee(employee);
+      await fetchEmployees();
       toast({
         title: "Employee added",
         description: `${employee.name} has been added successfully.`,
@@ -78,8 +86,7 @@ const Employees = () => {
   const handleDeleteEmployee = async (id: string) => {
     try {
       await deleteEmployee(id);
-      const updatedEmployees = await getEmployees();
-      setEmployees(updatedEmployees);
+      await fetchEmployees();
       toast({
         title: "Employee deleted",
         description: "Employee has been deleted successfully.",
@@ -113,8 +120,7 @@ const Employees = () => {
   const handleEmployeeUpdate = async (updatedEmployee: Employee) => {
     try {
       await updateEmployee(updatedEmployee);
-      const updatedEmployees = await getEmployees();
-      setEmployees(updatedEmployees);
+      await fetchEmployees();
       toast({
         title: "Employee updated",
         description: `${updatedEmployee.name}'s information has been updated.`,
@@ -131,21 +137,14 @@ const Employees = () => {
     }
   };
 
-  // Create a wrapper function that matches the expected prop name
-  const handleEmployeeAdded = () => {
-    // Refresh the employee list
-    const fetchEmployees = async () => {
-      const data = await getEmployees();
-      setEmployees(data);
-    };
-    
-    fetchEmployees();
-    setIsAddingEmployee(false);
+  // Properly handle employee additions with immediate UI updates
+  const handleEmployeeAdded = async () => {
+    await fetchEmployees();
   };
 
   const downloadEmployeeTemplate = () => {
     // Create a template CSV string
-    const csvContent = `Name,Position,Department,Email,Phone\nJohn Doe,Manager,Engineering,john.doe@example.com,+1-555-123-4567\nJane Smith,Developer,Engineering,jane.smith@example.com,+1-555-987-6543`;
+    const csvContent = `Name,Position,Department,Email,Phone,EmployeeID,HireDate,Gender,DateOfBirth,Nationality,Address,EmploymentType,WorkLocation,ManagerName,Status,Salary,PayFrequency,EmergencyContactName,EmergencyContactRelationship,EmergencyContactPhone,EmergencyContactEmail\nJohn Doe,Manager,Engineering,john.doe@example.com,+1-555-123-4567,EMP001,2023-01-15,Male,1980-05-10,American,123 Main St,Full-time,Headquarters,Jane Smith,Active,75000,Monthly,Mary Doe,Spouse,+1-555-987-6543,mary.doe@example.com\nJane Smith,Developer,Engineering,jane.smith@example.com,+1-555-987-6543,EMP002,2023-02-01,Female,1985-08-22,Canadian,456 Oak Ave,Full-time,Remote,John Doe,Active,65000,Monthly,Jack Smith,Spouse,+1-555-123-7890,jack.smith@example.com`;
     
     // Create a blob and download link
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -259,14 +258,7 @@ const Employees = () => {
       <MassUploadDialog
         open={isMassUploading}
         onClose={() => setIsMassUploading(false)}
-        onEmployeesUploaded={() => {
-          // Refresh employee list after mass upload
-          const fetchEmployees = async () => {
-            const data = await getEmployees();
-            setEmployees(data);
-          };
-          fetchEmployees();
-        }}
+        onEmployeesUploaded={handleEmployeeAdded}
       />
     </div>
   );

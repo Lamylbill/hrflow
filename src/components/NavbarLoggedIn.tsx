@@ -9,8 +9,6 @@ import {
   LogOut,
   Bell,
   Settings,
-  User,
-  Key,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { signOut } from "@/utils/auth";
@@ -186,17 +184,9 @@ const NavbarLoggedIn = () => {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate("/settings/profile")}>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/settings")}>
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Settings</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/settings/password")}>
-                  <Key className="mr-2 h-4 w-4" />
-                  <span>Change Password</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-red-500 hover:text-red-600 hover:bg-red-50">

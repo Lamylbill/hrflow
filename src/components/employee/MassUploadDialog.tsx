@@ -2,10 +2,10 @@
 import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Upload, Download, X, FileText, CheckCircle } from "lucide-react";
+import { Upload, Download, X, FileText, CheckCircle, AlertCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Employee } from "@/types/employee";
-import { addEmployee } from "@/utils/localStorage";
+import { addEmployee, getEmployees, logActivity } from "@/utils/localStorage";
 
 interface MassUploadDialogProps {
   open: boolean;
@@ -17,6 +17,8 @@ const MassUploadDialog = ({ open, onClose, onEmployeesUploaded }: MassUploadDial
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [duplicates, setDuplicates] = useState<string[]>([]);
+  const [showDuplicates, setShowDuplicates] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,6 +36,8 @@ const MassUploadDialog = ({ open, onClose, onEmployeesUploaded }: MassUploadDial
       
       setFile(selectedFile);
       setUploadSuccess(false);
+      setDuplicates([]);
+      setShowDuplicates(false);
     }
   };
 
@@ -58,6 +62,8 @@ const MassUploadDialog = ({ open, onClose, onEmployeesUploaded }: MassUploadDial
       
       setFile(droppedFile);
       setUploadSuccess(false);
+      setDuplicates([]);
+      setShowDuplicates(false);
     }
   };
 
@@ -67,6 +73,9 @@ const MassUploadDialog = ({ open, onClose, onEmployeesUploaded }: MassUploadDial
     setIsUploading(true);
     
     try {
+      // Get existing employees to check for duplicates
+      const existingEmployees = await getEmployees();
+      
       // Read the CSV file
       const reader = new FileReader();
       
@@ -81,6 +90,9 @@ const MassUploadDialog = ({ open, onClose, onEmployeesUploaded }: MassUploadDial
         const departmentIndex = headers.findIndex(h => h.toLowerCase().includes('department'));
         const emailIndex = headers.findIndex(h => h.toLowerCase().includes('email'));
         const phoneIndex = headers.findIndex(h => h.toLowerCase().includes('phone'));
+        const hireDateIndex = headers.findIndex(h => h.toLowerCase().includes('hire') && h.toLowerCase().includes('date'));
+        const genderIndex = headers.findIndex(h => h.toLowerCase().includes('gender'));
+        const salaryIndex = headers.findIndex(h => h.toLowerCase().includes('salary'));
         
         if (nameIndex === -1 || positionIndex === -1 || departmentIndex === -1 || emailIndex === -1) {
           throw new Error("CSV file is missing required columns: Name, Position, Department, Email");
@@ -88,6 +100,7 @@ const MassUploadDialog = ({ open, onClose, onEmployeesUploaded }: MassUploadDial
         
         // Skip header row
         const employees: Omit<Employee, "id">[] = [];
+        const duplicateEntries: string[] = [];
         
         for (let i = 1; i < rows.length; i++) {
           if (!rows[i].trim()) continue; // Skip empty rows
@@ -100,6 +113,9 @@ const MassUploadDialog = ({ open, onClose, onEmployeesUploaded }: MassUploadDial
             department: values[departmentIndex].trim(),
             email: values[emailIndex].trim(),
             phone: values[phoneIndex !== -1 ? phoneIndex : 0]?.trim() || "",
+            hireDate: hireDateIndex !== -1 ? values[hireDateIndex]?.trim() : new Date().toISOString().split('T')[0],
+            gender: genderIndex !== -1 ? values[genderIndex]?.trim() : "",
+            salary: salaryIndex !== -1 ? parseFloat(values[salaryIndex]) : undefined,
           };
           
           // Skip if any required field is missing
@@ -107,18 +123,49 @@ const MassUploadDialog = ({ open, onClose, onEmployeesUploaded }: MassUploadDial
             continue;
           }
           
-          employees.push(employee);
+          // Check for duplicates by email or name
+          const isDuplicate = existingEmployees.some(
+            existing => 
+              existing.email.toLowerCase() === employee.email.toLowerCase() || 
+              existing.name.toLowerCase() === employee.name.toLowerCase()
+          );
+          
+          if (isDuplicate) {
+            duplicateEntries.push(employee.name);
+          } else {
+            employees.push(employee);
+          }
         }
         
-        // Add all employees
+        // Add all non-duplicate employees
         for (const employee of employees) {
           await addEmployee(employee);
         }
         
-        toast({
-          title: "Upload successful",
-          description: `${employees.length} employees have been added.`,
-        });
+        // Log activity about duplicates if any
+        if (duplicateEntries.length > 0) {
+          setDuplicates(duplicateEntries);
+          
+          await logActivity({
+            action: "Duplicate employees detected during mass upload",
+            entityType: "employee",
+            details: {
+              duplicates: duplicateEntries,
+              totalDuplicates: duplicateEntries.length,
+              totalUploaded: employees.length
+            }
+          });
+          
+          toast({
+            title: "Upload partially successful",
+            description: `${employees.length} employees added. ${duplicateEntries.length} duplicates skipped.`,
+          });
+        } else {
+          toast({
+            title: "Upload successful",
+            description: `${employees.length} employees have been added.`,
+          });
+        }
         
         setUploadSuccess(true);
         onEmployeesUploaded();
@@ -138,8 +185,8 @@ const MassUploadDialog = ({ open, onClose, onEmployeesUploaded }: MassUploadDial
   };
 
   const downloadEmployeeTemplate = () => {
-    // Create a template CSV string
-    const csvContent = `Name,Position,Department,Email,Phone\nJohn Doe,Manager,Engineering,john.doe@example.com,+1-555-123-4567\nJane Smith,Developer,Engineering,jane.smith@example.com,+1-555-987-6543`;
+    // Create a template CSV string with all the expected fields
+    const csvContent = `Name,Position,Department,Email,Phone,EmployeeID,HireDate,Gender,DateOfBirth,Nationality,Address,EmploymentType,WorkLocation,ManagerName,Status,Salary,PayFrequency,EmergencyContactName,EmergencyContactRelationship,EmergencyContactPhone,EmergencyContactEmail\nJohn Doe,Manager,Engineering,john.doe@example.com,+1-555-123-4567,EMP001,2023-01-15,Male,1980-05-10,American,123 Main St,Full-time,Headquarters,Jane Smith,Active,75000,Monthly,Mary Doe,Spouse,+1-555-987-6543,mary.doe@example.com\nJane Smith,Developer,Engineering,jane.smith@example.com,+1-555-987-6543,EMP002,2023-02-01,Female,1985-08-22,Canadian,456 Oak Ave,Full-time,Remote,John Doe,Active,65000,Monthly,Jack Smith,Spouse,+1-555-123-7890,jack.smith@example.com`;
     
     // Create a blob and download link
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -161,6 +208,8 @@ const MassUploadDialog = ({ open, onClose, onEmployeesUploaded }: MassUploadDial
   const resetUpload = () => {
     setFile(null);
     setUploadSuccess(false);
+    setDuplicates([]);
+    setShowDuplicates(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -183,6 +232,36 @@ const MassUploadDialog = ({ open, onClose, onEmployeesUploaded }: MassUploadDial
             <p className="text-sm text-muted-foreground mb-4">
               Your employees have been successfully added to the system.
             </p>
+            
+            {duplicates.length > 0 && (
+              <div className="mb-4 w-full">
+                <div 
+                  className="flex items-center justify-between bg-amber-50 text-amber-800 px-4 py-2 rounded-md cursor-pointer"
+                  onClick={() => setShowDuplicates(!showDuplicates)}
+                >
+                  <div className="flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-2" />
+                    <span>
+                      {duplicates.length} duplicate {duplicates.length === 1 ? 'entry' : 'entries'} skipped
+                    </span>
+                  </div>
+                  <Button variant="ghost" size="sm">
+                    {showDuplicates ? 'Hide' : 'Show'}
+                  </Button>
+                </div>
+                
+                {showDuplicates && (
+                  <div className="mt-2 bg-muted p-2 rounded-md max-h-40 overflow-y-auto">
+                    <ul className="text-xs space-y-1">
+                      {duplicates.map((name, index) => (
+                        <li key={index} className="text-left">• {name}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+            
             <div className="flex space-x-2">
               <Button variant="outline" onClick={resetUpload}>
                 Upload Another File
@@ -248,7 +327,7 @@ const MassUploadDialog = ({ open, onClose, onEmployeesUploaded }: MassUploadDial
                 <li>Position (required)</li>
                 <li>Department (required)</li>
                 <li>Email (required)</li>
-                <li>Phone (optional)</li>
+                <li>Phone, HireDate, Gender, etc. (optional)</li>
               </ul>
               <div className="flex justify-center mt-2">
                 <Button 
