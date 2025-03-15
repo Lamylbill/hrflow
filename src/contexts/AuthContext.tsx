@@ -3,6 +3,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { getSession, signOut } from "@/utils/auth";
+import { initializeForNewUser } from "@/utils/initializeForNewUser";
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -22,6 +23,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         const session = await getSession();
         setIsAuthenticated(!!session);
+        
+        // Initialize user data if user is authenticated
+        if (session?.user) {
+          await initializeForNewUser(session.user.id);
+        }
       } catch (error) {
         console.error("Error checking auth status:", error);
         setIsAuthenticated(false);

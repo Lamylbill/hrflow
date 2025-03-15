@@ -41,6 +41,7 @@ export const signIn = async (email: string, password: string) => {
   
   // Initialize empty data structures for the user
   if (data.user) {
+    // This ensures we're not showing pre-recorded data
     await initializeForNewUser(data.user.id);
     
     // Store user name for display
