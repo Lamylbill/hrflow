@@ -28,9 +28,10 @@ interface AddLeaveRequestDialogProps {
   open: boolean;
   onClose: () => void;
   onLeaveAdded: () => void;
+  employees?: string[];
 }
 
-export function AddLeaveRequestDialog({ open, onClose, onLeaveAdded }: AddLeaveRequestDialogProps) {
+export function AddLeaveRequestDialog({ open, onClose, onLeaveAdded, employees: propEmployees }: AddLeaveRequestDialogProps) {
   const [employeeName, setEmployeeName] = useState("");
   const [leaveType, setLeaveType] = useState("");
   const [startDate, setStartDate] = useState("");

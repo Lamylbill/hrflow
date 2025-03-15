@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { NotificationsDropdown } from "@/components/NotificationsDropdown";
+import NotificationsDropdown from "@/components/NotificationsDropdown";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,13 +23,13 @@ import {
   FileBarChart,
   X,
 } from "lucide-react";
-import { useMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const NavbarLoggedIn = () => {
   const { logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
