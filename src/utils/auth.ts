@@ -16,6 +16,9 @@ export const signUp = async (email: string, password: string, metadata?: { name?
   
   // Initialize empty data for the new user
   if (data.user) {
+    // Store the user ID for reference
+    localStorage.setItem("currentUserId", data.user.id);
+    
     await initializeForNewUser(data.user.id);
     
     // Store user name for display
@@ -41,6 +44,9 @@ export const signIn = async (email: string, password: string) => {
   
   // Initialize empty data structures for the user
   if (data.user) {
+    // Store the user ID for reference
+    localStorage.setItem("currentUserId", data.user.id);
+    
     // This ensures we're not showing pre-recorded data by aggressively clearing and initializing
     await initializeForNewUser(data.user.id);
     
@@ -75,9 +81,11 @@ export const getSession = async () => {
   
   if (data.session) {
     localStorage.setItem("isAuthenticated", "true");
+    localStorage.setItem("currentUserId", data.session.user.id);
     return data.session;
   } else {
     localStorage.removeItem("isAuthenticated");
+    localStorage.removeItem("currentUserId");
     return null;
   }
 };

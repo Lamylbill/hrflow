@@ -11,6 +11,11 @@ const getUserSpecificKey = (userId: string, key: string): string => {
 export const initializeForNewUser = async (userId: string) => {
   console.log("Initializing data for new user:", userId);
   
+  if (!userId) {
+    console.error("Cannot initialize data: No user ID provided");
+    return false;
+  }
+  
   // STEP 1: Clear ALL localStorage data that might be shared
   // Clear any localStorage data for this user and any potential shared data
   localStorage.removeItem(getUserSpecificKey(userId, "employees"));
@@ -31,6 +36,9 @@ export const initializeForNewUser = async (userId: string) => {
   localStorage.setItem(getUserSpecificKey(userId, "leaveRequests"), JSON.stringify([]));
   localStorage.setItem(getUserSpecificKey(userId, "payrollData"), JSON.stringify([]));
   localStorage.setItem(getUserSpecificKey(userId, "activityLogs"), JSON.stringify([]));
+  
+  // Store the current user's ID for reference in other parts of the app
+  localStorage.setItem("currentUserId", userId);
   
   // Setup basic notifications
   const welcomeNotification = [{

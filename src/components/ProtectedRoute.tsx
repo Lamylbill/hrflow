@@ -18,10 +18,16 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         const { data } = await supabase.auth.getSession();
         const isAuthenticated = !!data.session;
         
+        // If authenticated, store the user ID for reference
+        if (isAuthenticated && data.session?.user?.id) {
+          localStorage.setItem("currentUserId", data.session.user.id);
+        }
+        
         // Also check localStorage as fallback for demo purposes
         const localAuth = localStorage.getItem("isAuthenticated") === "true";
         
         if (!isAuthenticated && !localAuth && location.pathname !== "/login") {
+          console.log("Not authenticated, redirecting to login");
           navigate("/login");
         }
       } catch (error) {
@@ -38,6 +44,8 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT' && location.pathname !== "/login") {
         navigate("/login");
+      } else if (session?.user?.id) {
+        localStorage.setItem("currentUserId", session.user.id);
       }
     });
 

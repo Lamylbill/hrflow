@@ -30,14 +30,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Store and initialize user data if user is authenticated
         if (session?.user) {
           setUserId(session.user.id);
+          console.log("Setting userId in AuthContext:", session.user.id);
+          localStorage.setItem("currentUserId", session.user.id);
           await initializeForNewUser(session.user.id);
         } else {
           setUserId(null);
+          localStorage.removeItem("currentUserId");
         }
       } catch (error) {
         console.error("Error checking auth status:", error);
         setIsAuthenticated(false);
         setUserId(null);
+        localStorage.removeItem("currentUserId");
       }
     };
     
@@ -50,12 +54,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (session?.user) {
         setUserId(session.user.id);
+        console.log("Auth state change - userId:", session.user.id);
+        localStorage.setItem("currentUserId", session.user.id);
         // For login events, reinitialize user data
         if (event === 'SIGNED_IN') {
           await initializeForNewUser(session.user.id);
         }
       } else {
         setUserId(null);
+        localStorage.removeItem("currentUserId");
       }
     });
     
@@ -76,6 +83,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsAuthenticated(true);
       if (data.user) {
         setUserId(data.user.id);
+        console.log("Login function - setting userId:", data.user.id);
+        localStorage.setItem("currentUserId", data.user.id);
         // Initialize user data after successful login
         await initializeForNewUser(data.user.id);
       }
@@ -91,6 +100,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await signOut();
       setIsAuthenticated(false);
       setUserId(null);
+      localStorage.removeItem("currentUserId");
       // Clear all localStorage data on logout
       localStorage.clear();
       navigate("/login");

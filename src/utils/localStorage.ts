@@ -1,4 +1,3 @@
-
 // Helper functions for managing data persistence in localStorage and Supabase
 
 // Types
@@ -10,8 +9,22 @@ import { supabase } from "@/integrations/supabase/client";
 
 // Get the current user ID
 const getCurrentUserId = async (): Promise<string | null> => {
+  // First try from localStorage for faster access
+  const storedUserId = localStorage.getItem("currentUserId");
+  if (storedUserId) {
+    return storedUserId;
+  }
+  
+  // Fallback to checking session
   const { data } = await supabase.auth.getSession();
-  return data.session?.user?.id || null;
+  const userId = data.session?.user?.id || null;
+  
+  // If we found it from session, store it for future use
+  if (userId) {
+    localStorage.setItem("currentUserId", userId);
+  }
+  
+  return userId;
 };
 
 // Helper function to get user-specific storage keys
