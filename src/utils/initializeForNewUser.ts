@@ -1,23 +1,28 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
+// Helper function to get user-specific storage keys
+const getUserSpecificKey = (userId: string, key: string): string => {
+  return `${userId}:${key}`;
+};
+
 // This function should be called when a new user signs up or logs in
 // It ensures the user doesn't see pre-populated data
 export const initializeForNewUser = async (userId: string) => {
   console.log("Initializing data for new user:", userId);
   
-  // Clear any localStorage data 
-  localStorage.removeItem("employees");
-  localStorage.removeItem("leaveRequests");
-  localStorage.removeItem("payrollData");
-  localStorage.removeItem("activityLogs");
-  localStorage.removeItem("notifications");
+  // Clear any localStorage data for this user
+  localStorage.removeItem(getUserSpecificKey(userId, "employees"));
+  localStorage.removeItem(getUserSpecificKey(userId, "leaveRequests"));
+  localStorage.removeItem(getUserSpecificKey(userId, "payrollData"));
+  localStorage.removeItem(getUserSpecificKey(userId, "activityLogs"));
+  localStorage.removeItem(getUserSpecificKey(userId, "notifications"));
   
   // Initialize with empty arrays for the user
-  localStorage.setItem("employees", JSON.stringify([]));
-  localStorage.setItem("leaveRequests", JSON.stringify([]));
-  localStorage.setItem("payrollData", JSON.stringify([]));
-  localStorage.setItem("activityLogs", JSON.stringify([]));
+  localStorage.setItem(getUserSpecificKey(userId, "employees"), JSON.stringify([]));
+  localStorage.setItem(getUserSpecificKey(userId, "leaveRequests"), JSON.stringify([]));
+  localStorage.setItem(getUserSpecificKey(userId, "payrollData"), JSON.stringify([]));
+  localStorage.setItem(getUserSpecificKey(userId, "activityLogs"), JSON.stringify([]));
   
   // Setup basic notifications
   const welcomeNotification = [{
@@ -29,7 +34,7 @@ export const initializeForNewUser = async (userId: string) => {
     type: "info"
   }];
   
-  localStorage.setItem("notifications", JSON.stringify(welcomeNotification));
+  localStorage.setItem(getUserSpecificKey(userId, "notifications"), JSON.stringify(welcomeNotification));
   
   return true;
 };

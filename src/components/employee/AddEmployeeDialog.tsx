@@ -10,6 +10,7 @@ interface AddEmployeeDialogProps {
   open: boolean;
   onClose: () => void;
   onEmployeeAdded: () => void;
+  employees?: string[]; // Make this optional since it's not used in this component
 }
 
 const AddEmployeeDialog = ({ open, onClose, onEmployeeAdded }: AddEmployeeDialogProps) => {
@@ -62,6 +63,7 @@ const AddEmployeeDialog = ({ open, onClose, onEmployeeAdded }: AddEmployeeDialog
     
     // Call the callback to refresh the employee list
     onEmployeeAdded();
+    onClose();
   };
 
   return (

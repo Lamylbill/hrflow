@@ -1,3 +1,4 @@
+
 // Helper functions for managing data persistence in localStorage and Supabase
 
 // Types
@@ -7,32 +8,56 @@ import { PayrollData, PayrollStatus } from "@/types/payroll";
 import { ActivityLog } from "@/types/activity";
 import { supabase } from "@/integrations/supabase/client";
 
+// Get the current user ID
+const getCurrentUserId = async (): Promise<string | null> => {
+  const { data } = await supabase.auth.getSession();
+  return data.session?.user?.id || null;
+};
+
+// Helper function to get user-specific storage keys
+const getUserSpecificKey = (userId: string, key: string): string => {
+  return `${userId}:${key}`;
+};
+
 // Initialize with empty data for all users
 export const initializeLocalStorage = async () => {
   // Check if we're in a production environment and a user is logged in
-  const { data: sessionData } = await supabase.auth.getSession();
-  const isLoggedIn = !!sessionData.session;
+  const userId = await getCurrentUserId();
+  
+  if (!userId) {
+    console.log("No user logged in, skipping localStorage initialization");
+    return;
+  }
+
+  console.log("Initializing localStorage for user:", userId);
   
   // Initialize with empty arrays for all data types if they don't exist
-  if (!localStorage.getItem("employees")) {
-    localStorage.setItem("employees", JSON.stringify([]));
+  if (!localStorage.getItem(getUserSpecificKey(userId, "employees"))) {
+    localStorage.setItem(getUserSpecificKey(userId, "employees"), JSON.stringify([]));
   }
 
-  if (!localStorage.getItem("leaveRequests")) {
-    localStorage.setItem("leaveRequests", JSON.stringify([]));
+  if (!localStorage.getItem(getUserSpecificKey(userId, "leaveRequests"))) {
+    localStorage.setItem(getUserSpecificKey(userId, "leaveRequests"), JSON.stringify([]));
   }
 
-  if (!localStorage.getItem("payrollData")) {
-    localStorage.setItem("payrollData", JSON.stringify([]));
+  if (!localStorage.getItem(getUserSpecificKey(userId, "payrollData"))) {
+    localStorage.setItem(getUserSpecificKey(userId, "payrollData"), JSON.stringify([]));
   }
 
-  if (!localStorage.getItem("activityLogs")) {
-    localStorage.setItem("activityLogs", JSON.stringify([]));
+  if (!localStorage.getItem(getUserSpecificKey(userId, "activityLogs"))) {
+    localStorage.setItem(getUserSpecificKey(userId, "activityLogs"), JSON.stringify([]));
   }
 };
 
 // Employee CRUD operations - Now correctly handling promises
 export const getEmployees = async (): Promise<Employee[]> => {
+  const userId = await getCurrentUserId();
+  
+  if (!userId) {
+    console.log("No user logged in, returning empty employees array");
+    return [];
+  }
+  
   try {
     // Try to get from Supabase first
     const { data, error } = await supabase
@@ -56,12 +81,18 @@ export const getEmployees = async (): Promise<Employee[]> => {
     console.error("Error fetching employees from Supabase:", error);
   }
   
-  // Fallback to localStorage
-  const employees = localStorage.getItem("employees");
+  // Fallback to localStorage with user-specific key
+  const employees = localStorage.getItem(getUserSpecificKey(userId, "employees"));
   return employees ? JSON.parse(employees) : [];
 };
 
 export const addEmployee = async (employee: Omit<Employee, "id">): Promise<Employee> => {
+  const userId = await getCurrentUserId();
+  
+  if (!userId) {
+    throw new Error("No user logged in, cannot add employee");
+  }
+  
   try {
     // Split name into first and last name
     const nameParts = employee.name.split(' ');
@@ -109,7 +140,7 @@ export const addEmployee = async (employee: Omit<Employee, "id">): Promise<Emplo
     console.error("Error adding employee to Supabase:", error);
   }
   
-  // Fallback to localStorage
+  // Fallback to localStorage with user-specific key
   const employees = await getEmployees();
   const newEmployee = {
     ...employee,
@@ -117,7 +148,7 @@ export const addEmployee = async (employee: Omit<Employee, "id">): Promise<Emplo
   };
   
   employees.push(newEmployee);
-  localStorage.setItem("employees", JSON.stringify(employees));
+  localStorage.setItem(getUserSpecificKey(userId, "employees"), JSON.stringify(employees));
   
   // Log activity
   logActivity({
@@ -131,6 +162,12 @@ export const addEmployee = async (employee: Omit<Employee, "id">): Promise<Emplo
 };
 
 export const updateEmployee = async (employee: Employee): Promise<Employee> => {
+  const userId = await getCurrentUserId();
+  
+  if (!userId) {
+    throw new Error("No user logged in, cannot update employee");
+  }
+  
   try {
     // Split name into first and last name
     const nameParts = employee.name.split(' ');
@@ -164,13 +201,13 @@ export const updateEmployee = async (employee: Employee): Promise<Employee> => {
   } catch (error) {
     console.error("Error updating employee in Supabase:", error);
     
-    // Fallback to localStorage
+    // Fallback to localStorage with user-specific key
     const employees = await getEmployees();
     const index = employees.findIndex((e) => e.id === employee.id);
     
     if (index !== -1) {
       employees[index] = employee;
-      localStorage.setItem("employees", JSON.stringify(employees));
+      localStorage.setItem(getUserSpecificKey(userId, "employees"), JSON.stringify(employees));
       
       // Log activity
       logActivity({
@@ -186,6 +223,12 @@ export const updateEmployee = async (employee: Employee): Promise<Employee> => {
 };
 
 export const deleteEmployee = async (id: string): Promise<boolean> => {
+  const userId = await getCurrentUserId();
+  
+  if (!userId) {
+    throw new Error("No user logged in, cannot delete employee");
+  }
+  
   try {
     // Delete from Supabase
     const { error } = await supabase
@@ -207,14 +250,14 @@ export const deleteEmployee = async (id: string): Promise<boolean> => {
   } catch (error) {
     console.error("Error deleting employee from Supabase:", error);
     
-    // Fallback to localStorage
+    // Fallback to localStorage with user-specific key
     const employees = await getEmployees();
     const index = employees.findIndex((e) => e.id === id);
     
     if (index !== -1) {
       const deletedEmployee = employees[index];
       employees.splice(index, 1);
-      localStorage.setItem("employees", JSON.stringify(employees));
+      localStorage.setItem(getUserSpecificKey(userId, "employees"), JSON.stringify(employees));
       
       // Log activity
       logActivity({
@@ -231,14 +274,26 @@ export const deleteEmployee = async (id: string): Promise<boolean> => {
   }
 };
 
-// Leave request operations
-export const getLeaveRequests = (): LeaveRequest[] => {
-  const leaveRequests = localStorage.getItem("leaveRequests");
+// Leave request operations with user-specific keys
+export const getLeaveRequests = async (): Promise<LeaveRequest[]> => {
+  const userId = await getCurrentUserId();
+  
+  if (!userId) {
+    return [];
+  }
+  
+  const leaveRequests = localStorage.getItem(getUserSpecificKey(userId, "leaveRequests"));
   return leaveRequests ? JSON.parse(leaveRequests) : [];
 };
 
-export const addLeaveRequest = (leaveRequest: Omit<LeaveRequest, "id" | "status">): LeaveRequest => {
-  const leaveRequests = getLeaveRequests();
+export const addLeaveRequest = async (leaveRequest: Omit<LeaveRequest, "id" | "status">): Promise<LeaveRequest> => {
+  const userId = await getCurrentUserId();
+  
+  if (!userId) {
+    throw new Error("No user logged in, cannot add leave request");
+  }
+  
+  const leaveRequests = await getLeaveRequests();
   const newLeaveRequest = {
     ...leaveRequest,
     id: Date.now().toString(),
@@ -246,7 +301,7 @@ export const addLeaveRequest = (leaveRequest: Omit<LeaveRequest, "id" | "status"
   };
   
   leaveRequests.push(newLeaveRequest);
-  localStorage.setItem("leaveRequests", JSON.stringify(leaveRequests));
+  localStorage.setItem(getUserSpecificKey(userId, "leaveRequests"), JSON.stringify(leaveRequests));
   
   // Log activity
   logActivity({
@@ -259,13 +314,19 @@ export const addLeaveRequest = (leaveRequest: Omit<LeaveRequest, "id" | "status"
   return newLeaveRequest;
 };
 
-export const updateLeaveStatus = (id: string, status: LeaveStatus): LeaveRequest | null => {
-  const leaveRequests = getLeaveRequests();
+export const updateLeaveStatus = async (id: string, status: LeaveStatus): Promise<LeaveRequest | null> => {
+  const userId = await getCurrentUserId();
+  
+  if (!userId) {
+    return null;
+  }
+  
+  const leaveRequests = await getLeaveRequests();
   const index = leaveRequests.findIndex((lr) => lr.id === id);
   
   if (index !== -1) {
     leaveRequests[index].status = status;
-    localStorage.setItem("leaveRequests", JSON.stringify(leaveRequests));
+    localStorage.setItem(getUserSpecificKey(userId, "leaveRequests"), JSON.stringify(leaveRequests));
     
     // Log activity
     logActivity({
@@ -281,14 +342,26 @@ export const updateLeaveStatus = (id: string, status: LeaveStatus): LeaveRequest
   return null;
 };
 
-// Payroll operations
-export const getPayrollData = (): PayrollData[] => {
-  const payrollData = localStorage.getItem("payrollData");
+// Payroll operations with user-specific keys
+export const getPayrollData = async (): Promise<PayrollData[]> => {
+  const userId = await getCurrentUserId();
+  
+  if (!userId) {
+    return [];
+  }
+  
+  const payrollData = localStorage.getItem(getUserSpecificKey(userId, "payrollData"));
   return payrollData ? JSON.parse(payrollData) : [];
 };
 
-export const updatePayrollStatus = (id: string, status: PayrollStatus, paymentDate?: string): PayrollData | null => {
-  const payrollData = getPayrollData();
+export const updatePayrollStatus = async (id: string, status: PayrollStatus, paymentDate?: string): Promise<PayrollData | null> => {
+  const userId = await getCurrentUserId();
+  
+  if (!userId) {
+    return null;
+  }
+  
+  const payrollData = await getPayrollData();
   const index = payrollData.findIndex((p) => p.id === id);
   
   if (index !== -1) {
@@ -297,7 +370,7 @@ export const updatePayrollStatus = (id: string, status: PayrollStatus, paymentDa
       payrollData[index].paymentDate = paymentDate;
     }
     
-    localStorage.setItem("payrollData", JSON.stringify(payrollData));
+    localStorage.setItem(getUserSpecificKey(userId, "payrollData"), JSON.stringify(payrollData));
     
     // Log activity
     logActivity({
@@ -313,8 +386,14 @@ export const updatePayrollStatus = (id: string, status: PayrollStatus, paymentDa
   return null;
 };
 
-export const processPayroll = (ids: string[]): PayrollData[] => {
-  const payrollData = getPayrollData();
+export const processPayroll = async (ids: string[]): Promise<PayrollData[]> => {
+  const userId = await getCurrentUserId();
+  
+  if (!userId) {
+    return [];
+  }
+  
+  const payrollData = await getPayrollData();
   const today = new Date().toISOString().split('T')[0];
   const processed: PayrollData[] = [];
   
@@ -328,7 +407,7 @@ export const processPayroll = (ids: string[]): PayrollData[] => {
   });
   
   if (processed.length > 0) {
-    localStorage.setItem("payrollData", JSON.stringify(payrollData));
+    localStorage.setItem(getUserSpecificKey(userId, "payrollData"), JSON.stringify(payrollData));
     
     // Log activity
     logActivity({
@@ -342,14 +421,30 @@ export const processPayroll = (ids: string[]): PayrollData[] => {
   return processed;
 };
 
-// Activity logging
-export const getActivityLogs = (): ActivityLog[] => {
-  const logs = localStorage.getItem("activityLogs");
+// Activity logging with user-specific keys
+export const getActivityLogs = async (): Promise<ActivityLog[]> => {
+  const userId = await getCurrentUserId();
+  
+  if (!userId) {
+    return [];
+  }
+  
+  const logs = localStorage.getItem(getUserSpecificKey(userId, "activityLogs"));
   return logs ? JSON.parse(logs) : [];
 };
 
-export const logActivity = (log: Omit<ActivityLog, "id">): ActivityLog => {
-  const logs = getActivityLogs();
+export const logActivity = async (log: Omit<ActivityLog, "id">): Promise<ActivityLog> => {
+  const userId = await getCurrentUserId();
+  
+  if (!userId) {
+    // If no user is logged in, still create the log but don't persist it
+    return {
+      ...log,
+      id: Date.now().toString(),
+    };
+  }
+  
+  const logs = await getActivityLogs();
   const newLog = {
     ...log,
     id: Date.now().toString(),
@@ -359,7 +454,7 @@ export const logActivity = (log: Omit<ActivityLog, "id">): ActivityLog => {
   
   // Keep only last 100 logs to prevent localStorage from getting too large
   const trimmedLogs = logs.slice(0, 100);
-  localStorage.setItem("activityLogs", JSON.stringify(trimmedLogs));
+  localStorage.setItem(getUserSpecificKey(userId, "activityLogs"), JSON.stringify(trimmedLogs));
   
   return newLog;
 };
