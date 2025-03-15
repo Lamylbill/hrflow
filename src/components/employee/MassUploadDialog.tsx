@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -73,10 +72,8 @@ const MassUploadDialog = ({ open, onClose, onEmployeesUploaded }: MassUploadDial
     setIsUploading(true);
     
     try {
-      // Get existing employees to check for duplicates
       const existingEmployees = await getEmployees();
       
-      // Read the CSV file
       const reader = new FileReader();
       
       reader.onload = async (e) => {
@@ -84,7 +81,6 @@ const MassUploadDialog = ({ open, onClose, onEmployeesUploaded }: MassUploadDial
         const rows = text.split('\n');
         const headers = rows[0].split(',');
         
-        // Map CSV indices to our fields
         const nameIndex = headers.findIndex(h => h.toLowerCase().includes('name'));
         const positionIndex = headers.findIndex(h => h.toLowerCase().includes('position'));
         const departmentIndex = headers.findIndex(h => h.toLowerCase().includes('department'));
@@ -98,12 +94,11 @@ const MassUploadDialog = ({ open, onClose, onEmployeesUploaded }: MassUploadDial
           throw new Error("CSV file is missing required columns: Name, Position, Department, Email");
         }
         
-        // Skip header row
         const employees: Omit<Employee, "id">[] = [];
         const duplicateEntries: string[] = [];
         
         for (let i = 1; i < rows.length; i++) {
-          if (!rows[i].trim()) continue; // Skip empty rows
+          if (!rows[i].trim()) continue;
           
           const values = rows[i].split(',');
           
@@ -118,12 +113,10 @@ const MassUploadDialog = ({ open, onClose, onEmployeesUploaded }: MassUploadDial
             salary: salaryIndex !== -1 ? parseFloat(values[salaryIndex]) : undefined,
           };
           
-          // Skip if any required field is missing
           if (!employee.name || !employee.position || !employee.department || !employee.email) {
             continue;
           }
           
-          // Check for duplicates by email or name
           const isDuplicate = existingEmployees.some(
             existing => 
               existing.email.toLowerCase() === employee.email.toLowerCase() || 
@@ -137,23 +130,18 @@ const MassUploadDialog = ({ open, onClose, onEmployeesUploaded }: MassUploadDial
           }
         }
         
-        // Add all non-duplicate employees
         for (const employee of employees) {
           await addEmployee(employee);
         }
         
-        // Log activity about duplicates if any
         if (duplicateEntries.length > 0) {
           setDuplicates(duplicateEntries);
           
           await logActivity({
-            action: "Duplicate employees detected during mass upload",
-            entityType: "employee",
-            details: {
-              duplicates: duplicateEntries,
-              totalDuplicates: duplicateEntries.length,
-              totalUploaded: employees.length
-            }
+            action: "duplicate_detected",
+            module: "employees",
+            description: `Duplicate employees detected during mass upload: ${duplicateEntries.length} duplicates, ${employees.length} uploaded`,
+            timestamp: new Date().toISOString()
           });
           
           toast({
@@ -185,10 +173,8 @@ const MassUploadDialog = ({ open, onClose, onEmployeesUploaded }: MassUploadDial
   };
 
   const downloadEmployeeTemplate = () => {
-    // Create a template CSV string with all the expected fields
     const csvContent = `Name,Position,Department,Email,Phone,EmployeeID,HireDate,Gender,DateOfBirth,Nationality,Address,EmploymentType,WorkLocation,ManagerName,Status,Salary,PayFrequency,EmergencyContactName,EmergencyContactRelationship,EmergencyContactPhone,EmergencyContactEmail\nJohn Doe,Manager,Engineering,john.doe@example.com,+1-555-123-4567,EMP001,2023-01-15,Male,1980-05-10,American,123 Main St,Full-time,Headquarters,Jane Smith,Active,75000,Monthly,Mary Doe,Spouse,+1-555-987-6543,mary.doe@example.com\nJane Smith,Developer,Engineering,jane.smith@example.com,+1-555-987-6543,EMP002,2023-02-01,Female,1985-08-22,Canadian,456 Oak Ave,Full-time,Remote,John Doe,Active,65000,Monthly,Jack Smith,Spouse,+1-555-123-7890,jack.smith@example.com`;
     
-    // Create a blob and download link
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

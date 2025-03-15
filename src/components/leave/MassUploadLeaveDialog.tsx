@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -77,10 +76,8 @@ export function MassUploadLeaveDialog({
     setIsUploading(true);
     
     try {
-      // Fetch existing leave requests to check for duplicates
       const existingLeaveRequests = await getLeaveRequests();
       
-      // Read the CSV file
       const reader = new FileReader();
       
       reader.onload = async (e) => {
@@ -88,7 +85,6 @@ export function MassUploadLeaveDialog({
         const rows = text.split('\n');
         const headers = rows[0].split(',');
         
-        // Map CSV indices to our fields
         const employeeNameIndex = headers.findIndex(h => h.toLowerCase().includes('employeename') || h.toLowerCase().includes('employee name'));
         const leaveTypeIndex = headers.findIndex(h => h.toLowerCase().includes('leavetype') || h.toLowerCase().includes('leave type') || h.toLowerCase().includes('type'));
         const startDateIndex = headers.findIndex(h => h.toLowerCase().includes('startdate') || h.toLowerCase().includes('start date'));
@@ -99,12 +95,11 @@ export function MassUploadLeaveDialog({
           throw new Error("CSV file is missing required columns: EmployeeName, LeaveType, StartDate, EndDate");
         }
         
-        // Skip header row
         const leaveRequests: Omit<LeaveRequest, "id" | "status">[] = [];
         const duplicateEntries: string[] = [];
         
         for (let i = 1; i < rows.length; i++) {
-          if (!rows[i].trim()) continue; // Skip empty rows
+          if (!rows[i].trim()) continue;
           
           const values = rows[i].split(',');
           
@@ -116,20 +111,17 @@ export function MassUploadLeaveDialog({
             reason: reasonIndex !== -1 ? values[reasonIndex]?.trim() : undefined,
           };
           
-          // Skip if any required field is missing
           if (!leaveRequest.employeeName || !leaveRequest.type || !leaveRequest.startDate || !leaveRequest.endDate) {
             continue;
           }
           
-          // Validate dates
           try {
             new Date(leaveRequest.startDate);
             new Date(leaveRequest.endDate);
           } catch (e) {
-            continue; // Skip if dates are invalid
+            continue;
           }
           
-          // Check for duplicates - same employee with overlapping date ranges
           const isDuplicate = existingLeaveRequests.some(
             existing => 
               existing.employeeName.toLowerCase() === leaveRequest.employeeName.toLowerCase() && (
@@ -145,23 +137,18 @@ export function MassUploadLeaveDialog({
           }
         }
         
-        // Add all non-duplicate leave requests
         for (const leave of leaveRequests) {
           await addLeaveRequest(leave);
         }
         
-        // Log activity about duplicates if any
         if (duplicateEntries.length > 0) {
           setDuplicates(duplicateEntries);
           
           await logActivity({
-            action: "Duplicate leave requests detected during mass upload",
-            entityType: "leave",
-            details: {
-              duplicates: duplicateEntries,
-              totalDuplicates: duplicateEntries.length,
-              totalUploaded: leaveRequests.length
-            }
+            action: "duplicate_detected",
+            module: "leave",
+            description: `Duplicate leave requests detected during mass upload: ${duplicateEntries.length} duplicates, ${leaveRequests.length} uploaded`,
+            timestamp: new Date().toISOString()
           });
           
           toast({
@@ -193,10 +180,8 @@ export function MassUploadLeaveDialog({
   };
 
   const downloadLeaveTemplate = () => {
-    // Create a template CSV string
     const csvContent = `EmployeeName,LeaveType,StartDate,EndDate,Reason\nJohn Doe,Annual Leave,2023-06-01,2023-06-05,Family vacation\nJane Smith,Sick Leave,2023-06-10,2023-06-11,Doctor's appointment`;
     
-    // Create a blob and download link
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
