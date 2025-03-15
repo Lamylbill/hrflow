@@ -9,12 +9,14 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
+  userId: string | null; // Add userId to context
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null); // Track current user ID
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -22,23 +24,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const checkAuthStatus = async () => {
       try {
         const session = await getSession();
-        setIsAuthenticated(!!session);
+        const isUserAuthenticated = !!session;
+        setIsAuthenticated(isUserAuthenticated);
         
-        // Initialize user data if user is authenticated
+        // Store and initialize user data if user is authenticated
         if (session?.user) {
+          setUserId(session.user.id);
           await initializeForNewUser(session.user.id);
+        } else {
+          setUserId(null);
         }
       } catch (error) {
         console.error("Error checking auth status:", error);
         setIsAuthenticated(false);
+        setUserId(null);
       }
     };
     
     checkAuthStatus();
     
     // Listen for authentication state changes
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      setIsAuthenticated(!!session);
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const isUserAuthenticated = !!session;
+      setIsAuthenticated(isUserAuthenticated);
+      
+      if (session?.user) {
+        setUserId(session.user.id);
+        // For login events, reinitialize user data
+        if (event === 'SIGNED_IN') {
+          await initializeForNewUser(session.user.id);
+        }
+      } else {
+        setUserId(null);
+      }
     });
     
     return () => {
@@ -56,6 +74,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
       
       setIsAuthenticated(true);
+      if (data.user) {
+        setUserId(data.user.id);
+        // Initialize user data after successful login
+        await initializeForNewUser(data.user.id);
+      }
       return true;
     } catch (error) {
       console.error("Login error:", error);
@@ -67,6 +90,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await signOut();
       setIsAuthenticated(false);
+      setUserId(null);
+      // Clear all localStorage data on logout
+      localStorage.clear();
       navigate("/login");
     } catch (error) {
       console.error("Logout error:", error);
@@ -74,7 +100,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, userId, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

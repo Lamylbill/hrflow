@@ -14,7 +14,7 @@ export const signUp = async (email: string, password: string, metadata?: { name?
   
   if (error) throw error;
   
-  // Initialize data for the new user
+  // Initialize empty data for the new user
   if (data.user) {
     await initializeForNewUser(data.user.id);
     
@@ -41,7 +41,7 @@ export const signIn = async (email: string, password: string) => {
   
   // Initialize empty data structures for the user
   if (data.user) {
-    // This ensures we're not showing pre-recorded data
+    // This ensures we're not showing pre-recorded data by aggressively clearing and initializing
     await initializeForNewUser(data.user.id);
     
     // Store user name for display
@@ -63,9 +63,8 @@ export const signOut = async () => {
   
   if (error) throw error;
   
-  // Clear localStorage for backward compatibility
-  localStorage.removeItem("isAuthenticated");
-  localStorage.removeItem("userName");
+  // Clear ALL localStorage data on logout to prevent data leaking
+  localStorage.clear();
 };
 
 // Get the current session
