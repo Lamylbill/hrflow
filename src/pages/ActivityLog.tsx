@@ -14,7 +14,16 @@ const ActivityLogPage = () => {
 
   useEffect(() => {
     // Load activity logs from localStorage
-    setActivityLogs(getActivityLogs());
+    const loadActivityLogs = async () => {
+      try {
+        const logs = await getActivityLogs();
+        setActivityLogs(logs);
+      } catch (error) {
+        console.error("Error loading activity logs:", error);
+      }
+    };
+    
+    loadActivityLogs();
   }, []);
 
   // Filter activity logs

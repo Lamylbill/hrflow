@@ -15,14 +15,23 @@ const Payroll = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterMonth, setFilterMonth] = useState("Current Month");
   const [payrollData, setPayrollData] = useState<PayrollData[]>([]);
+  const [pendingPayrollCount, setPendingPayrollCount] = useState(0);
 
   useEffect(() => {
     // Load payroll data from localStorage
     loadPayrollData();
   }, []);
 
-  const loadPayrollData = () => {
-    setPayrollData(getPayrollData());
+  const loadPayrollData = async () => {
+    try {
+      const data = await getPayrollData();
+      setPayrollData(data);
+      // Count pending and processing items
+      const pendingCount = data.filter(p => p.status === "pending" || p.status === "processing").length;
+      setPendingPayrollCount(pendingCount);
+    } catch (error) {
+      console.error("Error loading payroll data:", error);
+    }
   };
 
   // Filter payroll data by search term
@@ -32,7 +41,7 @@ const Payroll = () => {
     payroll.position.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleRunPayroll = () => {
+  const handleRunPayroll = async () => {
     // Get all pending and processing payroll items
     const pendingProcessingIds = payrollData
       .filter(p => p.status === "pending" || p.status === "processing")
@@ -48,16 +57,25 @@ const Payroll = () => {
     }
     
     // Process the payroll
-    const processed = processPayroll(pendingProcessingIds);
-    
-    if (processed.length > 0) {
-      toast({
-        title: "Payroll Processed",
-        description: `Successfully processed ${processed.length} payroll items`,
-      });
+    try {
+      const processed = await processPayroll(pendingProcessingIds);
       
-      // Refresh the data
-      loadPayrollData();
+      if (processed.length > 0) {
+        toast({
+          title: "Payroll Processed",
+          description: `Successfully processed ${processed.length} payroll items`,
+        });
+        
+        // Refresh the data
+        loadPayrollData();
+      }
+    } catch (error) {
+      console.error("Error processing payroll:", error);
+      toast({
+        title: "Error Processing Payroll",
+        description: "An error occurred while processing the payroll",
+        variant: "destructive",
+      });
     }
   };
 

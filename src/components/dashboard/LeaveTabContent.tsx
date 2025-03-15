@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Calendar, Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,9 +10,9 @@ const LeaveTabContent = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const loadLeaveRequests = () => {
+    const loadLeaveRequests = async () => {
       try {
-        const data = getLeaveRequests();
+        const data = await getLeaveRequests();
         setLeaveRequests(data);
       } catch (error) {
         console.error("Error loading leave requests:", error);

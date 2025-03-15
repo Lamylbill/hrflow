@@ -25,8 +25,13 @@ const Leave = () => {
     loadLeaveRequests();
   }, []);
 
-  const loadLeaveRequests = () => {
-    setLeaveRequests(getLeaveRequests());
+  const loadLeaveRequests = async () => {
+    try {
+      const requests = await getLeaveRequests();
+      setLeaveRequests(requests);
+    } catch (error) {
+      console.error("Error loading leave requests:", error);
+    }
   };
 
   // Filter leave requests

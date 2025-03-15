@@ -12,9 +12,9 @@ const PayrollTabContent = () => {
 
   useEffect(() => {
     // Load payroll data
-    const loadPayrollData = () => {
+    const loadPayrollData = async () => {
       try {
-        const data = getPayrollData();
+        const data = await getPayrollData();
         setPayrollData(data);
       } catch (error) {
         console.error("Error loading payroll data:", error);
