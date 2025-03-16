@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import NavbarLoggedIn from "@/components/NavbarLoggedIn";
@@ -26,7 +27,7 @@ const Dashboard = () => {
   const [employees, setEmployees] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch employees data - this function will be called on initial load and when events are triggered
+  // Fetch employees data without any refresh interval
   const fetchEmployeeData = useCallback(async () => {
     try {
       setIsLoading(true);

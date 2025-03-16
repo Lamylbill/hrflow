@@ -12,16 +12,16 @@ interface DashboardEmployeeListenerProps {
  */
 const DashboardEmployeeListener = ({ onEmployeeChange }: DashboardEmployeeListenerProps) => {
   useEffect(() => {
-    console.log("DashboardEmployeeListener mounted, setting up listeners");
+    console.log("DashboardEmployeeListener mounted, setting up listener");
     
     // Listen for employee data changes using the event bus
-    const cleanup = onEvent(EventTypes.EMPLOYEE_DATA_CHANGED, (data) => {
-      console.log("Employee data change detected via event bus:", data);
+    const cleanup = onEvent(EventTypes.EMPLOYEE_DATA_CHANGED, () => {
+      console.log("Employee data change detected via event bus");
       onEmployeeChange();
     });
     
     return () => {
-      console.log("DashboardEmployeeListener unmounting, cleaning up listeners");
+      console.log("DashboardEmployeeListener unmounting, cleaning up listener");
       cleanup();
     };
   }, [onEmployeeChange]);
