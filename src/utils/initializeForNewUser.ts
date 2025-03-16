@@ -58,13 +58,13 @@ export const initializeForNewUser = async (userId: string) => {
   // STEP 3: Check if there's any Supabase data for this user and clear it
   try {
     // Check if they have any employees in Supabase and clear them
-    const { error: deleteError } = await supabase
+    const { error } = await supabase
       .from('employees')
       .delete()
       .eq('user_id', userId);  // Only delete records associated with this user
     
-    if (deleteError) {
-      console.error("Error clearing user's Supabase data:", deleteError);
+    if (error) {
+      console.error("Error clearing user's Supabase data:", error);
     }
   } catch (error) {
     console.error("Error checking/clearing Supabase data:", error);
