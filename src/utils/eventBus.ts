@@ -24,8 +24,7 @@ export const emitEvent = (eventType: EventTypes, data?: any) => {
 // Subscribe to an event
 export const onEvent = (
   eventType: EventTypes | string, 
-  handler: (data?: any) => void, 
-  dependencies: React.DependencyList = []
+  handler: (data?: any) => void
 ): (() => void) => {
   
   const handlerWrapper = (event: Event) => {
@@ -45,36 +44,6 @@ export const onEvent = (
 export const markPageAsLoaded = (pageId: string) => {
   console.log(`Page ${pageId} marked as loaded`);
   
-  // Add a data attribute to the body for the global load check
-  const loadIndicator = document.createElement('div');
-  loadIndicator.setAttribute('data-page-loaded', 'true');
-  loadIndicator.setAttribute('data-page-id', pageId);
-  loadIndicator.style.display = 'none';
-  document.body.appendChild(loadIndicator);
-  
   // Emit the page loaded event
-  window.dispatchEvent(new Event('pageLoaded'));
   emitEvent(EventTypes.PAGE_LOADED, { pageId });
 };
-
-/**
- * Usage example:
- * 
- * // In component A (emitter):
- * import { emitEvent, EventTypes } from '@/utils/eventBus';
- * 
- * // After employee is added
- * emitEvent(EventTypes.EMPLOYEE_DATA_CHANGED, { action: 'added', count: newCount });
- * 
- * // In component B (listener):
- * import { onEvent, EventTypes } from '@/utils/eventBus';
- * 
- * useEffect(() => {
- *   const cleanup = onEvent(EventTypes.EMPLOYEE_DATA_CHANGED, (data) => {
- *     console.log('Employee data changed:', data);
- *     refreshEmployeeData();
- *   }, []);
- *   
- *   return cleanup;
- * }, []);
- */
