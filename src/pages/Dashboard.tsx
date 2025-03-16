@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import NavbarLoggedIn from "@/components/NavbarLoggedIn";
 import Footer from "@/components/Footer";
 import DashboardCard from "@/components/DashboardCard";
 import GlassCard from "@/components/GlassCard";
+import DashboardEmployeeListener from "@/components/DashboardEmployeeListener";
 import {
   Users,
   Calendar,
@@ -21,32 +22,29 @@ import { getEmployees } from "@/utils/localStorage";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  // Mock data for the dashboard
   const [activeTab, setActiveTab] = useState("overview");
   const [employees, setEmployees] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch employees data on mount and when employees are added/removed
-  useEffect(() => {
-    const fetchEmployeeData = async () => {
-      try {
-        setIsLoading(true);
-        const data = await getEmployees();
-        setEmployees(data);
-      } catch (error) {
-        console.error("Error fetching employees:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchEmployeeData();
-
-    // Set up a refresh interval of 5 seconds to check for updates
-    const refreshInterval = setInterval(fetchEmployeeData, 5000);
-    
-    return () => clearInterval(refreshInterval);
+  // Fetch employees data - this function will be called on initial load and when events are triggered
+  const fetchEmployeeData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      console.log("Dashboard: Fetching employee data");
+      const data = await getEmployees();
+      console.log("Dashboard: Employee data fetched", data);
+      setEmployees(data);
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  // Initialize data on first load
+  useEffect(() => {
+    fetchEmployeeData();
+  }, [fetchEmployeeData]);
 
   // Calculate department distribution
   const departmentCounts = employees.reduce((acc, employee) => {
@@ -109,23 +107,12 @@ const Dashboard = () => {
     },
   ];
 
-  const recentActivity = [
-    // Empty by default - will be populated when user performs actions
-  ];
-
+  const recentActivity = [];
   const totalEmployees = employees.length;
 
-  // Add a function to handle page loading issues
+  // Simple navigation function without the timeout
   const navigateSafely = (path) => {
     navigate(path);
-    
-    // Fallback mechanism if the page doesn't load within 2 seconds
-    setTimeout(() => {
-      if (window.location.pathname !== path) {
-        console.log("Page navigation timeout, forcing reload");
-        window.location.href = path;
-      }
-    }, 2000);
   };
 
   const renderTabContent = () => {
@@ -331,6 +318,9 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <NavbarLoggedIn />
+
+      {/* Add the employee listener component that will refresh data when employee changes are detected */}
+      <DashboardEmployeeListener onEmployeeChange={fetchEmployeeData} />
 
       <main className="flex-grow pt-24 pb-12 page-transition">
         <div className="hr-container">

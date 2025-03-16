@@ -11,7 +11,7 @@ export enum EventTypes {
   PAYROLL_DATA_CHANGED = 'payroll-data-changed', 
   AUTH_STATUS_CHANGED = 'auth-status-changed',
   PAGE_LOAD_FAILED = 'page-load-failed',
-  PAGE_LOADED = 'pageLoaded'
+  PAGE_LOADED = 'page-loaded'
 }
 
 // Trigger an event to notify listeners
@@ -38,12 +38,4 @@ export const onEvent = (
   return () => {
     window.removeEventListener(eventType, handlerWrapper);
   };
-};
-
-// Helper function to mark a page as successfully loaded
-export const markPageAsLoaded = (pageId: string) => {
-  console.log(`Page ${pageId} marked as loaded`);
-  
-  // Emit the page loaded event
-  emitEvent(EventTypes.PAGE_LOADED, { pageId });
 };

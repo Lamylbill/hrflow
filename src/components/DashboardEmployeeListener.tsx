@@ -17,13 +17,11 @@ const DashboardEmployeeListener = ({ onEmployeeChange }: DashboardEmployeeListen
     // Listen for employee data changes using the event bus
     const cleanup = onEvent(EventTypes.EMPLOYEE_DATA_CHANGED, (data) => {
       console.log("Employee data change detected via event bus:", data);
-      if (typeof onEmployeeChange === 'function') {
-        onEmployeeChange();
-      }
+      onEmployeeChange();
     });
     
     return () => {
-      console.log("DashboardEmployeeListener unmounted, cleaning up listeners");
+      console.log("DashboardEmployeeListener unmounting, cleaning up listeners");
       cleanup();
     };
   }, [onEmployeeChange]);

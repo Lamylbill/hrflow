@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { PlusCircle, Search, Upload, Download } from "lucide-react";
@@ -11,8 +10,8 @@ import EmployeeCard from "@/components/EmployeeCard";
 import EmployeeDetailsDialog from "@/components/employee/EmployeeDetailsDialog";
 import EditEmployeeDialog from "@/components/employee/EditEmployeeDialog";
 import MassUploadDialog from "@/components/employee/MassUploadDialog";
-import { getEmployees } from "@/utils/localStorage";
-import { addEmployee, deleteEmployee, updateEmployee } from "@/utils/localStorage";
+import { getEmployees, addEmployee, deleteEmployee, updateEmployee } from "@/utils/localStorage";
+import { EventTypes, emitEvent } from "@/utils/eventBus";
 import { toast } from "@/hooks/use-toast";
 
 const Employees = () => {
@@ -26,49 +25,21 @@ const Employees = () => {
   const [isViewingDetails, setIsViewingDetails] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [loadAttempts, setLoadAttempts] = useState(0);
 
-  // Improved page load detection
-  useEffect(() => {
-    const loadTimeout = setTimeout(() => {
-      if (isLoading && loadAttempts < 3) {
-        console.log(`Employees page load attempt ${loadAttempts + 1} failed, retrying`);
-        setLoadAttempts(prev => prev + 1);
-        fetchEmployees();
-      } else if (isLoading && loadAttempts >= 3) {
-        console.log("Multiple load attempts failed, forcing full page refresh");
-        window.location.reload();
-      }
-    }, 3000); // Check every 3 seconds
-
-    return () => clearTimeout(loadTimeout);
-  }, [isLoading, loadAttempts]);
-
-  // Fetch employees on mount and when needed
   useEffect(() => {
     fetchEmployees();
-    
-    // Set up periodic refresh for employee data
-    const refreshInterval = setInterval(() => {
-      fetchEmployees(false); // Silent refresh
-    }, 5000);
-    
-    return () => clearInterval(refreshInterval);
   }, []);
 
-  const fetchEmployees = async (showLoader = true) => {
+  const fetchEmployees = async () => {
     try {
-      if (showLoader) {
-        setIsLoading(true);
-      }
-      
+      setIsLoading(true);
+      console.log("Employees page: Fetching employee data");
       const data = await getEmployees();
+      console.log("Employees page: Employee data fetched", data);
       
-      // Only update if we got actual data
       if (Array.isArray(data)) {
         setEmployees(data);
         setFilteredEmployees(data);
-        setIsLoading(false);
       } else {
         console.error("Invalid employee data format:", data);
         toast({
@@ -84,10 +55,11 @@ const Employees = () => {
         description: "Failed to load employees. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Filter employees when search query changes
   useEffect(() => {
     if (!searchQuery.trim()) {
       setFilteredEmployees(employees);
@@ -110,6 +82,9 @@ const Employees = () => {
     try {
       await addEmployee(employee);
       await fetchEmployees();
+      
+      emitEvent(EventTypes.EMPLOYEE_DATA_CHANGED, { action: 'add', employeeName: employee.name });
+      
       toast({
         title: "Employee added",
         description: `${employee.name} has been added successfully.`,
@@ -127,8 +102,16 @@ const Employees = () => {
 
   const handleDeleteEmployee = async (id: string) => {
     try {
+      const employeeToDelete = employees.find(e => e.id === id);
       await deleteEmployee(id);
       await fetchEmployees();
+      
+      emitEvent(EventTypes.EMPLOYEE_DATA_CHANGED, { 
+        action: 'delete', 
+        employeeId: id,
+        employeeName: employeeToDelete?.name 
+      });
+      
       toast({
         title: "Employee deleted",
         description: "Employee has been deleted successfully.",
@@ -163,6 +146,13 @@ const Employees = () => {
     try {
       await updateEmployee(updatedEmployee);
       await fetchEmployees();
+      
+      emitEvent(EventTypes.EMPLOYEE_DATA_CHANGED, { 
+        action: 'update', 
+        employeeId: updatedEmployee.id,
+        employeeName: updatedEmployee.name 
+      });
+      
       toast({
         title: "Employee updated",
         description: `${updatedEmployee.name}'s information has been updated.`,
@@ -179,30 +169,20 @@ const Employees = () => {
     }
   };
 
-  // Properly handle employee additions with immediate UI updates
   const handleEmployeeAdded = async () => {
     await fetchEmployees();
     
-    // Navigate to dashboard and back to ensure dashboard gets updated with new employee count
-    try {
-      // Use a more reliable approach to refresh the dashboard data without navigation
-      const event = new CustomEvent('employee-data-changed');
-      window.dispatchEvent(event);
-      
-      toast({
-        title: "Success",
-        description: "Employee added successfully. Dashboard has been updated.",
-      });
-    } catch (error) {
-      console.error("Error handling employee addition:", error);
-    }
+    emitEvent(EventTypes.EMPLOYEE_DATA_CHANGED, { action: 'batch' });
+    
+    toast({
+      title: "Success",
+      description: "Employee(s) added successfully. Dashboard has been updated.",
+    });
   };
 
   const downloadEmployeeTemplate = () => {
-    // Create a template CSV string
     const csvContent = `Name,Position,Department,Email,Phone,EmployeeID,HireDate,Gender,DateOfBirth,Nationality,Address,EmploymentType,WorkLocation,ManagerName,Status,Salary,PayFrequency,EmergencyContactName,EmergencyContactRelationship,EmergencyContactPhone,EmergencyContactEmail\nJohn Doe,Manager,Engineering,john.doe@example.com,+1-555-123-4567,EMP001,2023-01-15,Male,1980-05-10,American,123 Main St,Full-time,Headquarters,Jane Smith,Active,75000,Monthly,Mary Doe,Spouse,+1-555-987-6543,mary.doe@example.com\nJane Smith,Developer,Engineering,jane.smith@example.com,+1-555-987-6543,EMP002,2023-02-01,Female,1985-08-22,Canadian,456 Oak Ave,Full-time,Remote,John Doe,Active,65000,Monthly,Jack Smith,Spouse,+1-555-123-7890,jack.smith@example.com`;
     
-    // Create a blob and download link
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -289,7 +269,6 @@ const Employees = () => {
         )}
       </main>
       
-      {/* Dialogs */}
       <AddEmployeeDialog 
         open={isAddingEmployee}
         onClose={() => setIsAddingEmployee(false)}

@@ -16,27 +16,11 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { initializeApp } from "./utils/localStorage";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { EventTypes, markPageAsLoaded } from "./utils/eventBus";
 
 // Initialize localStorage with demo data
 initializeApp();
 
 function App() {
-  const [appReady, setAppReady] = useState(false);
-
-  // Global state check
-  useEffect(() => {
-    // Mark app as ready after a short delay to allow initialization
-    const readyTimer = setTimeout(() => {
-      setAppReady(true);
-      console.log("App marked as ready");
-    }, 500);
-    
-    return () => {
-      clearTimeout(readyTimer);
-    };
-  }, []);
-
   return (
     <Router>
       <ThemeProvider>
