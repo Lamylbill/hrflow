@@ -9,7 +9,8 @@ export enum EventTypes {
   EMPLOYEE_DATA_CHANGED = 'employee-data-changed',
   LEAVE_DATA_CHANGED = 'leave-data-changed',
   PAYROLL_DATA_CHANGED = 'payroll-data-changed', 
-  AUTH_STATUS_CHANGED = 'auth-status-changed'
+  AUTH_STATUS_CHANGED = 'auth-status-changed',
+  USER_PROFILE_UPDATED = 'user-profile-updated' // Added this new event type
 }
 
 // Trigger an event to notify listeners
