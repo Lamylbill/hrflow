@@ -21,21 +21,22 @@ export const signUp = async (email: string, password: string, metadata?: { name?
   
   // Initialize empty data for the new user
   if (data.user) {
-    // Store the user ID and authentication state for this browser session
-    // We don't use a generic "isAuthenticated" flag anymore
+    // Store the user ID for THIS browser session only
     sessionStorage.setItem("currentUserId", data.user.id);
     
     await initializeForNewUser(data.user.id);
     
-    // Store user metadata for this specific user
+    // Store user metadata with user-specific keys for persistence
     if (metadata?.name) {
-      localStorage.setItem("userName", metadata.name); // Keep this in localStorage for cross-tab access
-      localStorage.setItem(`${data.user.id}:userName`, metadata.name);
+      // Store both user-specific and current-session keys
+      localStorage.setItem(getUserSpecificKey(data.user.id, "userName"), metadata.name);
+      // Also set the current user's name for the active session
+      localStorage.setItem("userName", metadata.name);
     }
     
     // Store user email for profile access
+    localStorage.setItem(getUserSpecificKey(data.user.id, "userEmail"), email);
     localStorage.setItem("userEmail", email);
-    localStorage.setItem(`${data.user.id}:userEmail`, email);
   }
   
   return { data, error: null };
@@ -55,17 +56,17 @@ export const signIn = async (email: string, password: string) => {
     // Use sessionStorage for the current browser tab/window only
     sessionStorage.setItem("currentUserId", data.user.id);
     
-    // Store user info in localStorage for persistence across sessions
-    // but with user-specific keys
+    // Store user info with user-specific prefix for persistence
     const userName = data.user.user_metadata?.name;
     if (userName) {
-      localStorage.setItem("userName", userName); // Keep this in localStorage for cross-tab access
-      localStorage.setItem(`${data.user.id}:userName`, userName);
+      localStorage.setItem(getUserSpecificKey(data.user.id, "userName"), userName);
+      // Also set the current active user name
+      localStorage.setItem("userName", userName);
     }
     
     // Store user email for profile access
+    localStorage.setItem(getUserSpecificKey(data.user.id, "userEmail"), email);
     localStorage.setItem("userEmail", email);
-    localStorage.setItem(`${data.user.id}:userEmail`, email);
   }
   
   return { data, error: null };
@@ -74,13 +75,17 @@ export const signIn = async (email: string, password: string) => {
 // Sign out the current user
 export const signOut = async () => {
   try {
+    // Get the current user ID before attempting to sign out
+    const currentUserId = sessionStorage.getItem("currentUserId");
+    
     // First check if we have a session before attempting to sign out
     const { data: sessionData } = await supabase.auth.getSession();
     
     if (!sessionData.session) {
       console.log("No active session found, cleaning up local storage only");
-      // No active session, but we still want to clean up local storage
+      // No active session, but we still want to clean up sessionStorage
       sessionStorage.removeItem("currentUserId");
+      // Clean up the non-prefixed current user data
       localStorage.removeItem("userName");
       localStorage.removeItem("userEmail");
       return { success: true };
@@ -91,7 +96,7 @@ export const signOut = async () => {
     
     if (error) {
       console.error("Supabase signOut error:", error);
-      // Even if the API call fails, we should clean up local storage
+      // Even if the API call fails, we should clean up sessionStorage
       sessionStorage.removeItem("currentUserId");
       localStorage.removeItem("userName");
       localStorage.removeItem("userEmail");
@@ -127,7 +132,7 @@ export const getSession = async () => {
   if (error) throw error;
   
   if (data.session) {
-    // Use sessionStorage which is specific to this browser tab/window
+    // Update sessionStorage which is specific to this browser tab/window
     sessionStorage.setItem("currentUserId", data.session.user.id);
     
     // Update the current generic user data

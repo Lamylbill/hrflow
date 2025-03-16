@@ -32,11 +32,20 @@ const NavbarLoggedIn = () => {
   const isMobile = useIsMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userName, setUserName] = useState<string>("User");
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   useEffect(() => {
-    // Get user name from localStorage
+    // Track window width for responsive behavior
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    // Get user name from localStorage with user-specific key
     if (userId) {
-      const storedName = localStorage.getItem("userName");
+      const storedName = localStorage.getItem(`${userId}:userName`) || 
+                         localStorage.getItem("userName");
       if (storedName) {
         setUserName(storedName);
       }
@@ -95,8 +104,11 @@ const NavbarLoggedIn = () => {
     },
   ];
 
+  // Determine if we should show the vertical menu based on viewport width
+  const shouldShowVerticalMenu = isMobile || windowWidth < 1024;
+
   return (
-    <nav className="fixed w-full top-0 z-50 bg-background border-b">
+    <nav className="fixed w-full top-0 z-50 bg-background border-b dark:border-gray-800">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
@@ -109,7 +121,7 @@ const NavbarLoggedIn = () => {
               </Link>
             </div>
             {/* Only show horizontal menu on larger screens */}
-            {!isMobile && window.innerWidth >= 1024 && (
+            {!shouldShowVerticalMenu && (
               <div className="ml-10 flex items-center space-x-4">
                 {menuItems.map((item) => (
                   <Link
@@ -158,7 +170,7 @@ const NavbarLoggedIn = () => {
             </DropdownMenu>
 
             {/* Show burger menu on mobile OR medium screens */}
-            {(isMobile || window.innerWidth < 1024) && (
+            {shouldShowVerticalMenu && (
               <Button
                 variant="ghost"
                 className="ml-2"
@@ -176,8 +188,8 @@ const NavbarLoggedIn = () => {
       </div>
 
       {/* Show mobile menu when it's open AND (on mobile OR medium screens) */}
-      {mobileMenuOpen && (isMobile || window.innerWidth < 1024) && (
-        <div className="bg-background border-t">
+      {mobileMenuOpen && shouldShowVerticalMenu && (
+        <div className="bg-background border-t dark:border-gray-800">
           <div className="px-2 pt-2 pb-3 space-y-1">
             {menuItems.map((item) => (
               <Link

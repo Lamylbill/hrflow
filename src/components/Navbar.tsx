@@ -27,18 +27,41 @@ const Navbar = () => {
 
   useEffect(() => {
     // Check authentication status
-    const checkAuth = () => {
-      const auth = localStorage.getItem("isAuthenticated") === "true";
-      setIsAuthenticated(auth);
+    const checkAuth = async () => {
+      try {
+        // Get current user ID from sessionStorage for THIS specific browser tab
+        const currentUserId = sessionStorage.getItem("currentUserId");
+        setIsAuthenticated(!!currentUserId);
+      } catch (error) {
+        console.error("Error checking authentication:", error);
+        setIsAuthenticated(false);
+      }
     };
     
     checkAuth();
     
-    // Set up event listener for storage changes
-    window.addEventListener("storage", checkAuth);
+    // Set up event listener for auth state changes
+    window.addEventListener("storage", (event) => {
+      if (event.key === "currentUserId") {
+        setIsAuthenticated(!!event.newValue);
+      }
+    });
+    
+    // Listen for custom auth status change events
+    const handleAuthChange = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail?.status === 'signedIn') {
+        setIsAuthenticated(true);
+      } else if (customEvent.detail?.status === 'signedOut') {
+        setIsAuthenticated(false);
+      }
+    };
+    
+    window.addEventListener("auth-status-changed", handleAuthChange as EventListener);
     
     return () => {
-      window.removeEventListener("storage", checkAuth);
+      window.removeEventListener("storage", () => {});
+      window.removeEventListener("auth-status-changed", handleAuthChange as EventListener);
     };
   }, []);
 
