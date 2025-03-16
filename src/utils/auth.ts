@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { initializeForNewUser } from "./initializeForNewUser";
 
@@ -21,16 +20,21 @@ export const signUp = async (email: string, password: string, metadata?: { name?
   
   // Initialize empty data for the new user
   if (data.user) {
-    // Store the user ID for reference
-    localStorage.setItem("currentUserId", data.user.id);
-    localStorage.setItem("isAuthenticated", "true");
+    // Store the user ID and authentication state for this browser session
+    // We don't use a generic "isAuthenticated" flag anymore
+    sessionStorage.setItem("currentUserId", data.user.id);
     
     await initializeForNewUser(data.user.id);
     
-    // Store user name for display
+    // Store user metadata for this specific user
     if (metadata?.name) {
-      localStorage.setItem("userName", metadata.name);
+      localStorage.setItem("userName", metadata.name); // Keep this in localStorage for cross-tab access
+      localStorage.setItem(`${data.user.id}:userName`, metadata.name);
     }
+    
+    // Store user email for profile access
+    localStorage.setItem("userEmail", email);
+    localStorage.setItem(`${data.user.id}:userEmail`, email);
   }
   
   return { data, error: null };
@@ -45,17 +49,22 @@ export const signIn = async (email: string, password: string) => {
   
   if (error) throw error;
   
-  // Update localStorage with user data
+  // Update session storage with user data (session-specific)
   if (data.user) {
-    // Store the user ID for reference
-    localStorage.setItem("currentUserId", data.user.id);
-    localStorage.setItem("isAuthenticated", "true");
+    // Use sessionStorage for the current browser tab/window only
+    sessionStorage.setItem("currentUserId", data.user.id);
     
-    // Store user name for display
+    // Store user info in localStorage for persistence across sessions
+    // but with user-specific keys
     const userName = data.user.user_metadata?.name;
     if (userName) {
-      localStorage.setItem("userName", userName);
+      localStorage.setItem("userName", userName); // Keep this in localStorage for cross-tab access
+      localStorage.setItem(`${data.user.id}:userName`, userName);
     }
+    
+    // Store user email for profile access
+    localStorage.setItem("userEmail", email);
+    localStorage.setItem(`${data.user.id}:userEmail`, email);
   }
   
   return { data, error: null };
@@ -71,8 +80,13 @@ export const signOut = async () => {
       throw error;
     }
     
-    // Clear ALL localStorage data on logout to prevent data leaking
-    localStorage.clear();
+    // Clear only session-specific data on logout
+    // We keep the user-specific localStorage data for future use
+    sessionStorage.removeItem("currentUserId");
+    
+    // Clear the generic non-prefixed user data
+    localStorage.removeItem("userName");
+    localStorage.removeItem("userEmail");
     
     return { success: true };
   } catch (error) {
@@ -88,12 +102,20 @@ export const getSession = async () => {
   if (error) throw error;
   
   if (data.session) {
-    localStorage.setItem("isAuthenticated", "true");
-    localStorage.setItem("currentUserId", data.session.user.id);
+    // Use sessionStorage which is specific to this browser tab/window
+    sessionStorage.setItem("currentUserId", data.session.user.id);
+    
+    // Update the current generic user data
+    const userName = data.session.user.user_metadata?.name;
+    if (userName) {
+      localStorage.setItem("userName", userName);
+    }
+    
     return data.session;
   } else {
-    localStorage.removeItem("isAuthenticated");
-    localStorage.removeItem("currentUserId");
+    sessionStorage.removeItem("currentUserId");
+    localStorage.removeItem("userName");
+    localStorage.removeItem("userEmail");
     return null;
   }
 };

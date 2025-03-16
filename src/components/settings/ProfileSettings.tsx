@@ -6,20 +6,49 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const ProfileSettings = () => {
-  const [name, setName] = useState("Admin User");
-  const [email, setEmail] = useState("admin@example.com");
-  const [phone, setPhone] = useState("+1 (555) 123-4567");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const { userId } = useAuth();
+
+  // Load user data from localStorage
+  useEffect(() => {
+    if (userId) {
+      // Get user profile info from localStorage
+      const storedName = localStorage.getItem("userName");
+      const storedEmail = localStorage.getItem("userEmail");
+      const storedPhone = localStorage.getItem(`${userId}:userPhone`);
+      const storedAvatar = localStorage.getItem(`${userId}:userAvatar`);
+      
+      if (storedName) setName(storedName);
+      if (storedEmail) setEmail(storedEmail);
+      if (storedPhone) setPhone(storedPhone);
+      if (storedAvatar) setAvatarUrl(storedAvatar);
+    }
+  }, [userId]);
 
   const handleSave = () => {
-    // Simulate saving profile changes
+    if (!userId) return;
+    
+    // Save updated profile information to localStorage
+    localStorage.setItem("userName", name);
+    localStorage.setItem(`${userId}:userPhone`, phone);
+    
+    if (avatarUrl) {
+      localStorage.setItem(`${userId}:userAvatar`, avatarUrl);
+    }
+    
+    // Notify user of successful update
     toast({
       title: "Profile updated",
       description: "Your profile information has been successfully updated.",
     });
+    
     setIsEditing(false);
   };
 
@@ -34,6 +63,14 @@ const ProfileSettings = () => {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  // Get user initials for avatar fallback
+  const getInitials = () => {
+    if (!name) return "U";
+    const parts = name.split(" ");
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
   };
 
   return (
@@ -57,7 +94,7 @@ const ProfileSettings = () => {
             <div className="relative">
               <Avatar className="h-24 w-24">
                 <AvatarImage src={avatarUrl} />
-                <AvatarFallback className="text-lg">{name.split(" ").map(n => n[0]).join("")}</AvatarFallback>
+                <AvatarFallback className="text-lg">{getInitials()}</AvatarFallback>
               </Avatar>
               {isEditing && (
                 <div className="absolute bottom-0 right-0">
@@ -100,7 +137,7 @@ const ProfileSettings = () => {
                 type="email" 
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)} 
-                disabled={!isEditing}
+                disabled={true} // Email should be read-only as it's tied to authentication
               />
             </div>
             

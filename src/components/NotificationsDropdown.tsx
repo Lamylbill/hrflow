@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Bell, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -25,12 +25,40 @@ const NotificationsDropdown = ({ onToggle }: NotificationsDropdownProps) => {
   useEffect(() => {
     if (!userId) return;
     
-    // Load user-specific notifications from localStorage
     const userSpecificKey = `${userId}:notifications`;
     const storedNotifications = localStorage.getItem(userSpecificKey);
     
     if (storedNotifications) {
-      setNotifications(JSON.parse(storedNotifications));
+      try {
+        const parsedNotifications = JSON.parse(storedNotifications);
+        setNotifications(parsedNotifications);
+      } catch (error) {
+        console.error("Error parsing notifications:", error);
+        
+        const welcomeNotification = {
+          id: Date.now().toString(),
+          title: "Welcome to HR Flow",
+          message: "Thank you for using HR Flow. Get started by adding employees to your database.",
+          timestamp: new Date().toISOString(),
+          read: false,
+          type: "info" as const
+        };
+        
+        setNotifications([welcomeNotification]);
+        localStorage.setItem(userSpecificKey, JSON.stringify([welcomeNotification]));
+      }
+    } else {
+      const welcomeNotification = {
+        id: Date.now().toString(),
+        title: "Welcome to HR Flow",
+        message: "Thank you for using HR Flow. Get started by adding employees to your database.",
+        timestamp: new Date().toISOString(),
+        read: false,
+        type: "info" as const
+      };
+      
+      setNotifications([welcomeNotification]);
+      localStorage.setItem(userSpecificKey, JSON.stringify([welcomeNotification]));
     }
   }, [userId]);
 

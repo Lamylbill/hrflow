@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -107,7 +108,8 @@ const NavbarLoggedIn = () => {
                 HR Flow
               </Link>
             </div>
-            {!isMobile && (
+            {/* Only show horizontal menu on larger screens */}
+            {!isMobile && window.innerWidth >= 1024 && (
               <div className="ml-10 flex items-center space-x-4">
                 {menuItems.map((item) => (
                   <Link
@@ -155,7 +157,8 @@ const NavbarLoggedIn = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {isMobile && (
+            {/* Show burger menu on mobile OR medium screens */}
+            {(isMobile || window.innerWidth < 1024) && (
               <Button
                 variant="ghost"
                 className="ml-2"
@@ -172,8 +175,9 @@ const NavbarLoggedIn = () => {
         </div>
       </div>
 
-      {isMobile && mobileMenuOpen && (
-        <div className="sm:hidden bg-background border-t">
+      {/* Show mobile menu when it's open AND (on mobile OR medium screens) */}
+      {mobileMenuOpen && (isMobile || window.innerWidth < 1024) && (
+        <div className="bg-background border-t">
           <div className="px-2 pt-2 pb-3 space-y-1">
             {menuItems.map((item) => (
               <Link

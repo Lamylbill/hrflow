@@ -16,11 +16,9 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
-    localStorage.getItem("isAuthenticated") === "true"
-  );
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [userId, setUserId] = useState<string | null>(
-    localStorage.getItem("currentUserId")
+    sessionStorage.getItem("currentUserId")
   );
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
@@ -42,12 +40,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Store user data if user is authenticated
         if (data.session?.user) {
           setUserId(data.session.user.id);
-          localStorage.setItem("currentUserId", data.session.user.id);
-          localStorage.setItem("isAuthenticated", "true");
+          sessionStorage.setItem("currentUserId", data.session.user.id);
+          
+          // Update userName for this session/tab
+          const userName = data.session.user.user_metadata?.name;
+          if (userName) {
+            localStorage.setItem("userName", userName);
+          }
+          
         } else {
           setUserId(null);
-          localStorage.removeItem("currentUserId");
-          localStorage.removeItem("isAuthenticated");
+          sessionStorage.removeItem("currentUserId");
         }
         setIsLoading(false);
       } catch (error) {
@@ -55,8 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (isMounted) {
           setIsAuthenticated(false);
           setUserId(null);
-          localStorage.removeItem("currentUserId");
-          localStorage.removeItem("isAuthenticated");
+          sessionStorage.removeItem("currentUserId");
           setIsLoading(false);
         }
       }
@@ -73,15 +75,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (event === 'SIGNED_OUT') {
         setIsAuthenticated(false);
         setUserId(null);
-        localStorage.removeItem("currentUserId");
-        localStorage.removeItem("isAuthenticated");
+        sessionStorage.removeItem("currentUserId");
         emitEvent(EventTypes.AUTH_STATUS_CHANGED, { status: 'signedOut' });
         navigate("/login", { replace: true });
       } else if (event === 'SIGNED_IN' && session?.user) {
         setIsAuthenticated(true);
         setUserId(session.user.id);
-        localStorage.setItem("currentUserId", session.user.id);
-        localStorage.setItem("isAuthenticated", "true");
+        sessionStorage.setItem("currentUserId", session.user.id);
+        
+        // Update userName for this session/tab
+        const userName = session.user.user_metadata?.name;
+        if (userName) {
+          localStorage.setItem("userName", userName);
+        }
+        
         emitEvent(EventTypes.AUTH_STATUS_CHANGED, { status: 'signedIn' });
       }
     });
@@ -104,8 +111,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsAuthenticated(true);
       if (data.user) {
         setUserId(data.user.id);
-        localStorage.setItem("currentUserId", data.user.id);
-        localStorage.setItem("isAuthenticated", "true");
+        sessionStorage.setItem("currentUserId", data.user.id);
+        
+        // Update userName for this session/tab
+        const userName = data.user.user_metadata?.name;
+        if (userName) {
+          localStorage.setItem("userName", userName);
+        }
+        
+        // Store email for profile
+        localStorage.setItem("userEmail", email);
       }
       
       toast({
@@ -135,8 +150,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw error;
       }
       
-      // Clear all localStorage data on logout
-      localStorage.clear();
+      // Clear only session-specific data
+      sessionStorage.removeItem("currentUserId");
+      
+      // Clear the non-prefixed current user data
+      localStorage.removeItem("userName");
+      localStorage.removeItem("userEmail");
       
       setIsAuthenticated(false);
       setUserId(null);
