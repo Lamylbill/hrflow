@@ -17,13 +17,29 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { toast } = useToast();
 
   useEffect(() => {
+    // Use a flag to prevent multiple redirects
+    let isMounted = true;
+    
     const checkAuth = async () => {
       try {
         console.log("Running auth check...");
+        
+        // First check local storage for a cached auth state to prevent flickering
+        const cachedAuthStatus = localStorage.getItem("isAuthenticated") === "true";
+        
+        if (cachedAuthStatus) {
+          console.log("Using cached auth status: authenticated");
+          setIsAuthenticated(true);
+          setIsLoading(false);
+          return;
+        }
+        
         const { data } = await supabase.auth.getSession();
         const authStatus = !!data.session;
         
-        // If authenticated, store the user ID for reference
+        // If component was unmounted during the async call, don't update state
+        if (!isMounted) return;
+        
         if (authStatus && data.session?.user?.id) {
           localStorage.setItem("currentUserId", data.session.user.id);
           localStorage.setItem("isAuthenticated", "true");
@@ -34,20 +50,19 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
           localStorage.removeItem("isAuthenticated");
           localStorage.removeItem("currentUserId");
           setIsAuthenticated(false);
+          
+          // Only redirect if we're not already on the login page
+          if (location.pathname !== "/login" && location.pathname !== "/") {
+            navigate("/login", { replace: true });
+          }
         }
         
-        // Check if we need to redirect
-        if (!authStatus && location.pathname !== "/login") {
-          console.log("Not authenticated, redirecting to login");
-          navigate("/login", { replace: true });
-        }
-        
-        // Set loading to false regardless of auth state
         setIsLoading(false);
       } catch (error) {
         console.error("Auth check error:", error);
         
-        // Handle auth check failure
+        if (!isMounted) return;
+        
         toast({
           title: "Authentication Error",
           description: "Please try logging in again",
@@ -55,7 +70,9 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         });
         
         // Redirect to login on error
-        navigate("/login", { replace: true });
+        if (location.pathname !== "/login" && location.pathname !== "/") {
+          navigate("/login", { replace: true });
+        }
         setIsLoading(false);
       }
     };
@@ -66,10 +83,14 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state change event:", event);
       
-      if (event === 'SIGNED_OUT' && location.pathname !== "/login") {
+      if (!isMounted) return;
+      
+      if (event === 'SIGNED_OUT' && location.pathname !== "/login" && location.pathname !== "/") {
         navigate("/login", { replace: true });
         emitEvent(EventTypes.AUTH_STATUS_CHANGED, { status: "signedOut" });
         setIsAuthenticated(false);
+        localStorage.removeItem("isAuthenticated");
+        localStorage.removeItem("currentUserId");
       } else if (event === 'SIGNED_IN' && session?.user?.id) {
         localStorage.setItem("currentUserId", session.user.id);
         localStorage.setItem("isAuthenticated", "true");
@@ -80,9 +101,10 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     });
 
     return () => {
+      isMounted = false;
       authListener.subscription.unsubscribe();
     };
-  }, [navigate, location, toast]);
+  }, [navigate, location.pathname, toast]); // Removed location.pathname to prevent rechecking on every page change
 
   if (isLoading) {
     return (

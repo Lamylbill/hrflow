@@ -1,20 +1,8 @@
-
-import { NavLink, Link, useNavigate } from "react-router-dom";
-import {
-  BarChart,
-  Users,
-  Calendar,
-  CreditCard,
-  ClipboardList,
-  LogOut,
-  Bell,
-  Settings,
-} from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { signOut } from "@/utils/auth";
-import NotificationsDropdown from "./NotificationsDropdown";
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import NotificationsDropdown from "@/components/NotificationsDropdown";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,182 +11,201 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  Home,
+  Users,
+  CalendarDays,
+  DollarSign,
+  Settings,
+  LogOut,
+  Menu,
+  FileBarChart,
+  X,
+} from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useToast } from "@/hooks/use-toast";
 
 const NavbarLoggedIn = () => {
+  const { logout } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const isMobile = useIsMobile();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const notificationRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     try {
-      await signOut();
-      
+      await logout();
       toast({
-        title: "Logged out",
-        description: "You have been successfully logged out",
+        title: "Logged out successfully",
+        description: "You have been logged out of your account",
       });
-      
-      navigate("/login");
+      navigate("/login", { replace: true });
     } catch (error) {
       console.error("Logout error:", error);
       toast({
         title: "Logout failed",
-        description: "An error occurred during logout. Please try again.",
+        description: "There was a problem logging out. Please try again.",
         variant: "destructive",
       });
     }
   };
 
-  // Handle clicking outside to close notifications dropdown
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
-        setShowNotifications(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
-  // Get user information from localStorage
-  const userName = localStorage.getItem("userName") || "User";
-  const userInitials = userName.split(" ").map(name => name[0]).join("") || "U";
+  const menuItems = [
+    {
+      name: "Dashboard",
+      icon: <Home className="mr-2 h-4 w-4" />,
+      path: "/dashboard",
+    },
+    {
+      name: "Employees",
+      icon: <Users className="mr-2 h-4 w-4" />,
+      path: "/employees",
+    },
+    {
+      name: "Leave",
+      icon: <CalendarDays className="mr-2 h-4 w-4" />,
+      path: "/leave",
+    },
+    {
+      name: "Payroll",
+      icon: <DollarSign className="mr-2 h-4 w-4" />,
+      path: "/payroll",
+    },
+    {
+      name: "Activity Log",
+      icon: <FileBarChart className="mr-2 h-4 w-4" />,
+      path: "/activity",
+    },
+  ];
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-      <div className="flex items-center justify-between p-4 hr-container">
-        <div className="flex items-center">
-          <Link to="/" className="flex items-center space-x-2 text-primary font-semibold text-xl mr-8">
-            <span className="bg-primary text-white px-2 py-1 rounded-md">HR</span>
-            <span className="tracking-tight">Flow</span>
-          </Link>
-          <nav className="hidden md:flex space-x-1">
-            <NavLink
-              to="/dashboard"
-              className={({ isActive }) =>
-                `px-3 py-2 text-sm rounded-md ${
-                  isActive
-                    ? "bg-secondary text-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                } transition-colors`
-              }
-            >
-              <div className="flex items-center">
-                <BarChart className="h-4 w-4 mr-2" />
-                Dashboard
+    <nav className="fixed w-full top-0 z-50 bg-background border-b">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
+          <div className="flex">
+            <div className="flex-shrink-0 flex items-center">
+              <Link
+                to="/dashboard"
+                className="text-xl font-bold text-primary"
+              >
+                HR Flow
+              </Link>
+            </div>
+            {!isMobile && (
+              <div className="ml-10 flex items-center space-x-4">
+                {menuItems.map((item) => (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors ${
+                      isActive(item.path)
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {item.icon}
+                    {item.name}
+                  </Link>
+                ))}
               </div>
-            </NavLink>
-            <NavLink
-              to="/employees"
-              className={({ isActive }) =>
-                `px-3 py-2 text-sm rounded-md ${
-                  isActive
-                    ? "bg-secondary text-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                } transition-colors`
-              }
-            >
-              <div className="flex items-center">
-                <Users className="h-4 w-4 mr-2" />
-                Employees
-              </div>
-            </NavLink>
-            <NavLink
-              to="/leave"
-              className={({ isActive }) =>
-                `px-3 py-2 text-sm rounded-md ${
-                  isActive
-                    ? "bg-secondary text-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                } transition-colors`
-              }
-            >
-              <div className="flex items-center">
-                <Calendar className="h-4 w-4 mr-2" />
-                Leave
-              </div>
-            </NavLink>
-            <NavLink
-              to="/payroll"
-              className={({ isActive }) =>
-                `px-3 py-2 text-sm rounded-md ${
-                  isActive
-                    ? "bg-secondary text-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                } transition-colors`
-              }
-            >
-              <div className="flex items-center">
-                <CreditCard className="h-4 w-4 mr-2" />
-                Payroll
-              </div>
-            </NavLink>
-            <NavLink
-              to="/activity"
-              className={({ isActive }) =>
-                `px-3 py-2 text-sm rounded-md ${
-                  isActive
-                    ? "bg-secondary text-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                } transition-colors`
-              }
-            >
-              <div className="flex items-center">
-                <ClipboardList className="h-4 w-4 mr-2" />
-                Activity Log
-              </div>
-            </NavLink>
-          </nav>
-        </div>
-        <div className="flex items-center space-x-3">
-          <div className="relative" ref={notificationRef}>
-            <button
-              className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
-              onMouseEnter={() => setShowNotifications(true)}
-              aria-label="Notifications"
-            >
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
-            </button>
-            {showNotifications && <NotificationsDropdown onMouseLeave={() => setShowNotifications(false)} />}
+            )}
           </div>
-          <div className="hidden md:flex items-center">
+          <div className="flex items-center">
+            <NotificationsDropdown 
+              showDropdown={showNotifications} 
+              onToggle={setShowNotifications}
+            />
+
             <DropdownMenu>
-              <DropdownMenuTrigger className="focus:outline-none">
-                <div className="flex items-center hover:bg-secondary/50 p-2 rounded-lg cursor-pointer">
-                  <Avatar className="h-8 w-8 mr-2">
-                    <AvatarImage src={localStorage.getItem("userAvatar") || ""} alt={userName} />
-                    <AvatarFallback className="bg-primary/10 text-primary">
-                      {userInitials}
-                    </AvatarFallback>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="ml-2 relative h-9 w-9 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src="/placeholder.svg" alt="User" />
+                    <AvatarFallback>AU</AvatarFallback>
                   </Avatar>
-                  <span className="text-sm font-medium">
-                    {userName}
-                  </span>
-                </div>
+                </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Admin User</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate("/settings")}>
                   <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
+                  Settings
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="text-red-500 hover:text-red-600 hover:bg-red-50">
+                <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Logout</span>
+                  Log out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {isMobile && (
+              <Button
+                variant="ghost"
+                className="ml-2"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                {mobileMenuOpen ? (
+                  <X className="h-6 w-6" />
+                ) : (
+                  <Menu className="h-6 w-6" />
+                )}
+              </Button>
+            )}
           </div>
         </div>
       </div>
-    </div>
+
+      {isMobile && mobileMenuOpen && (
+        <div className="sm:hidden bg-background border-t">
+          <div className="px-2 pt-2 pb-3 space-y-1">
+            {menuItems.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`block px-3 py-2 rounded-md text-base font-medium flex items-center ${
+                  isActive(item.path)
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {item.icon}
+                {item.name}
+              </Link>
+            ))}
+            <Link
+              to="/settings"
+              className={`block px-3 py-2 rounded-md text-base font-medium flex items-center ${
+                isActive("/settings")
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <Settings className="mr-2 h-4 w-4" />
+              Settings
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="w-full text-left block px-3 py-2 rounded-md text-base font-medium flex items-center text-muted-foreground hover:bg-muted"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Log out
+            </button>
+          </div>
+        </div>
+      )}
+    </nav>
   );
 };
 

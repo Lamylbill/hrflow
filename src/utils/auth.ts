@@ -18,6 +18,7 @@ export const signUp = async (email: string, password: string, metadata?: { name?
   if (data.user) {
     // Store the user ID for reference
     localStorage.setItem("currentUserId", data.user.id);
+    localStorage.setItem("isAuthenticated", "true");
     
     await initializeForNewUser(data.user.id);
     
@@ -26,9 +27,6 @@ export const signUp = async (email: string, password: string, metadata?: { name?
       localStorage.setItem("userName", metadata.name);
     }
   }
-  
-  // Set localStorage for backward compatibility with existing code
-  localStorage.setItem("isAuthenticated", "true");
   
   return { data, error: null };
 };
@@ -46,6 +44,7 @@ export const signIn = async (email: string, password: string) => {
   if (data.user) {
     // Store the user ID for reference
     localStorage.setItem("currentUserId", data.user.id);
+    localStorage.setItem("isAuthenticated", "true");
     
     // This ensures we're not showing pre-recorded data by aggressively clearing and initializing
     await initializeForNewUser(data.user.id);
@@ -57,20 +56,30 @@ export const signIn = async (email: string, password: string) => {
     }
   }
   
-  // Set localStorage for backward compatibility with existing code
-  localStorage.setItem("isAuthenticated", "true");
-  
   return { data, error: null };
 };
 
 // Sign out the current user
 export const signOut = async () => {
-  const { error } = await supabase.auth.signOut();
+  console.log("signOut function called");
   
-  if (error) throw error;
-  
-  // Clear ALL localStorage data on logout to prevent data leaking
-  localStorage.clear();
+  try {
+    const { error } = await supabase.auth.signOut();
+    
+    if (error) {
+      console.error("Supabase signOut error:", error);
+      throw error;
+    }
+    
+    // Clear ALL localStorage data on logout to prevent data leaking
+    console.log("Clearing localStorage on logout");
+    localStorage.clear();
+    
+    return { success: true };
+  } catch (error) {
+    console.error("Error during signOut:", error);
+    throw error;
+  }
 };
 
 // Get the current session

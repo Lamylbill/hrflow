@@ -4,26 +4,38 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { getSession, signOut } from "@/utils/auth";
 import { initializeForNewUser } from "@/utils/initializeForNewUser";
+import { useToast } from "@/hooks/use-toast";
+import { EventTypes, emitEvent } from "@/utils/eventBus";
 
 interface AuthContextType {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
-  userId: string | null; // Add userId to context
+  logout: () => Promise<void>;
+  userId: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null); // Track current user ID
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
+    localStorage.getItem("isAuthenticated") === "true"
+  );
+  const [userId, setUserId] = useState<string | null>(
+    localStorage.getItem("currentUserId")
+  );
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
+    let isMounted = true;
+    
     // Check if user is logged in on initial load
     const checkAuthStatus = async () => {
       try {
         const session = await getSession();
+        
+        if (!isMounted) return;
+        
         const isUserAuthenticated = !!session;
         setIsAuthenticated(isUserAuthenticated);
         
@@ -32,16 +44,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUserId(session.user.id);
           console.log("Setting userId in AuthContext:", session.user.id);
           localStorage.setItem("currentUserId", session.user.id);
+          localStorage.setItem("isAuthenticated", "true");
           await initializeForNewUser(session.user.id);
         } else {
           setUserId(null);
           localStorage.removeItem("currentUserId");
+          localStorage.removeItem("isAuthenticated");
         }
       } catch (error) {
         console.error("Error checking auth status:", error);
-        setIsAuthenticated(false);
-        setUserId(null);
-        localStorage.removeItem("currentUserId");
+        if (isMounted) {
+          setIsAuthenticated(false);
+          setUserId(null);
+          localStorage.removeItem("currentUserId");
+          localStorage.removeItem("isAuthenticated");
+        }
       }
     };
     
@@ -49,6 +66,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     // Listen for authentication state changes
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!isMounted) return;
+      
+      console.log("Auth state change in AuthContext:", event);
       const isUserAuthenticated = !!session;
       setIsAuthenticated(isUserAuthenticated);
       
@@ -56,17 +76,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUserId(session.user.id);
         console.log("Auth state change - userId:", session.user.id);
         localStorage.setItem("currentUserId", session.user.id);
+        localStorage.setItem("isAuthenticated", "true");
         // For login events, reinitialize user data
         if (event === 'SIGNED_IN') {
           await initializeForNewUser(session.user.id);
+          emitEvent(EventTypes.AUTH_STATUS_CHANGED, { status: 'signedIn' });
         }
       } else {
         setUserId(null);
         localStorage.removeItem("currentUserId");
+        localStorage.removeItem("isAuthenticated");
+        if (event === 'SIGNED_OUT') {
+          emitEvent(EventTypes.AUTH_STATUS_CHANGED, { status: 'signedOut' });
+        }
       }
     });
     
     return () => {
+      isMounted = false;
       authListener.subscription.unsubscribe();
     };
   }, []);
@@ -85,27 +112,55 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUserId(data.user.id);
         console.log("Login function - setting userId:", data.user.id);
         localStorage.setItem("currentUserId", data.user.id);
+        localStorage.setItem("isAuthenticated", "true");
         // Initialize user data after successful login
         await initializeForNewUser(data.user.id);
+        emitEvent(EventTypes.AUTH_STATUS_CHANGED, { status: 'signedIn' });
       }
+      
+      toast({
+        title: "Login successful",
+        description: "Welcome back to HR Flow!",
+      });
+      
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error);
+      
+      toast({
+        title: "Login failed",
+        description: error.message || "Invalid email or password",
+        variant: "destructive",
+      });
+      
       return false;
     }
   };
 
-  const logout = async () => {
+  const logout = async (): Promise<void> => {
     try {
+      console.log("Logout initiated");
       await signOut();
+      
       setIsAuthenticated(false);
       setUserId(null);
-      localStorage.removeItem("currentUserId");
+      
       // Clear all localStorage data on logout
       localStorage.clear();
-      navigate("/login");
+      
+      emitEvent(EventTypes.AUTH_STATUS_CHANGED, { status: 'signedOut' });
+      
+      console.log("Logout completed successfully");
+      
+      // Navigation is now handled at the NavbarLoggedIn component
     } catch (error) {
       console.error("Logout error:", error);
+      
+      toast({
+        title: "Logout error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 

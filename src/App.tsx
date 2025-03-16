@@ -17,7 +17,7 @@ import { initializeApp } from "./utils/localStorage";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 
-// Initialize localStorage with demo data
+// Initialize localStorage with demo data only once on app load
 initializeApp();
 
 function App() {
