@@ -11,9 +11,11 @@ import CallToAction from "@/components/home/CallToAction";
 import Footer from "@/components/Footer";
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Index = () => {
   const location = useLocation();
+  const isMobile = useIsMobile();
 
   // Scroll to the section based on the hash in the URL
   useEffect(() => {
@@ -21,24 +23,33 @@ const Index = () => {
       const id = location.hash.substring(1);
       const element = document.getElementById(id);
       if (element) {
-        element.scrollIntoView({ behavior: "smooth" });
+        // Add offset for the fixed header on mobile
+        const yOffset = isMobile ? -70 : -100;
+        const y = element.getBoundingClientRect().top + window.scrollY + yOffset;
+        
+        window.scrollTo({
+          top: y,
+          behavior: "smooth"
+        });
       }
     } else {
       window.scrollTo(0, 0);
     }
-  }, [location]);
+  }, [location, isMobile]);
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Navbar />
-      <Hero />
-      <Features />
-      <ComplianceSection />
-      <About />
-      <Pricing />
-      <Testimonials />
-      <Contact />
-      <CallToAction />
+      <main className="flex-1 pt-16">
+        <Hero />
+        <Features />
+        <ComplianceSection />
+        <About />
+        <Pricing />
+        <Testimonials />
+        <Contact />
+        <CallToAction />
+      </main>
       <Footer />
     </div>
   );

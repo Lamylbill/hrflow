@@ -3,12 +3,14 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import AnimatedButton from "./AnimatedButton";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -60,13 +62,13 @@ const Navbar = () => {
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled
           ? "py-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm"
-          : "py-4 bg-transparent"
+          : "py-3 md:py-4 bg-transparent"
       }`}
     >
-      <div className="hr-container flex items-center justify-between">
+      <div className="hr-container flex items-center justify-between px-4 md:px-6">
         <Link
           to="/"
-          className="flex items-center space-x-2 text-primary font-semibold text-xl"
+          className="flex items-center space-x-2 text-primary font-semibold text-lg md:text-xl"
         >
           <span className="bg-primary text-white px-2 py-1 rounded-md">HR</span>
           <span className="tracking-tight">Flow</span>
@@ -123,8 +125,9 @@ const Navbar = () => {
 
         {/* Mobile menu button */}
         <button
-          className="md:hidden text-foreground"
+          className="md:hidden text-foreground p-1"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
+          aria-label={isMenuOpen ? "Close menu" : "Open menu"}
         >
           {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
@@ -132,44 +135,43 @@ const Navbar = () => {
 
       {/* Mobile navigation */}
       {isMenuOpen && (
-        <div className="md:hidden bg-background/95 backdrop-blur-md shadow-lg animate-slide-down">
-          <div className="hr-container py-4 flex flex-col space-y-4">
+        <div className="md:hidden bg-background/95 backdrop-blur-md shadow-lg animate-slide-down overflow-y-auto max-h-[calc(100vh-4rem)]">
+          <div className="hr-container py-4 flex flex-col space-y-3 px-4">
             {navItems.map((item) => (
               <Link
                 key={item.name}
                 to={item.path}
-                className={`text-sm font-medium py-2 transition-colors hover:text-primary ${
+                className={`text-sm font-medium py-2.5 px-3 rounded-md transition-colors ${
                   location.pathname === item.path || 
                   (item.path.startsWith("/#") && location.pathname === "/" && location.hash === item.path.substring(1))
-                    ? "text-primary"
-                    : "text-foreground/80"
+                    ? "bg-primary/10 text-primary"
+                    : "text-foreground/80 hover:bg-secondary/50 hover:text-foreground"
                 }`}
               >
                 {item.name}
               </Link>
             ))}
-            <div className="flex flex-col space-y-2 pt-2 border-t border-border">
+            <div className="flex flex-col space-y-2 pt-3 border-t border-border">
               {isAuthenticated ? (
-                <Link to="/dashboard">
+                <Link to="/dashboard" className="w-full">
                   <AnimatedButton
-                    variant="ghost"
-                    className="text-sm font-medium w-full py-2"
+                    className="text-sm font-medium w-full py-2.5 mt-2"
                   >
                     Dashboard
                   </AnimatedButton>
                 </Link>
               ) : (
                 <>
-                  <Link to="/login">
+                  <Link to="/login" className="w-full">
                     <AnimatedButton
-                      variant="ghost"
-                      className="text-sm font-medium w-full py-2"
+                      variant="outline"
+                      className="text-sm font-medium w-full py-2.5 mt-2"
                     >
                       Log in
                     </AnimatedButton>
                   </Link>
-                  <Link to="/login?signup=true">
-                    <AnimatedButton className="text-sm font-medium w-full py-2">
+                  <Link to="/login?signup=true" className="w-full">
+                    <AnimatedButton className="text-sm font-medium w-full py-2.5">
                       Sign up
                     </AnimatedButton>
                   </Link>
