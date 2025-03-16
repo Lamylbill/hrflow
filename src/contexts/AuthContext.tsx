@@ -144,36 +144,70 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async (): Promise<void> => {
     try {
-      const { error } = await supabase.auth.signOut();
+      // First check if the session exists
+      const { data: sessionData } = await supabase.auth.getSession();
       
-      if (error) {
-        throw error;
+      // If no session, just clean up the UI state and storage
+      if (!sessionData.session) {
+        // Clean up local state
+        setIsAuthenticated(false);
+        setUserId(null);
+        sessionStorage.removeItem("currentUserId");
+        localStorage.removeItem("userName");
+        localStorage.removeItem("userEmail");
+        
+        toast({
+          title: "Logged out successfully",
+          description: "You have been logged out of your account",
+        });
+        
+        navigate("/login", { replace: true });
+        return;
       }
       
-      // Clear only session-specific data
-      sessionStorage.removeItem("currentUserId");
+      // Attempt to sign out from Supabase
+      const { error } = await supabase.auth.signOut();
       
-      // Clear the non-prefixed current user data
+      // Even if there's an API error, proceed with local cleanup
+      if (error) {
+        console.warn("Supabase logout warning:", error.message);
+        // Display a warning but don't stop the logout process
+        toast({
+          title: "Partial logout completed",
+          description: "Your session may not be fully cleared on the server. Please refresh your browser.",
+        });
+      } else {
+        toast({
+          title: "Logged out successfully",
+          description: "You have been logged out of your account",
+        });
+      }
+      
+      // Clean up storage and React state regardless of server response
+      sessionStorage.removeItem("currentUserId");
       localStorage.removeItem("userName");
       localStorage.removeItem("userEmail");
       
       setIsAuthenticated(false);
       setUserId(null);
       
-      toast({
-        title: "Logged out successfully",
-        description: "You have been logged out of your account",
-      });
-      
       navigate("/login", { replace: true });
     } catch (error: any) {
       console.error("Logout error:", error);
       
+      // Ensure the user is still logged out client-side despite any errors
+      setIsAuthenticated(false);
+      setUserId(null);
+      sessionStorage.removeItem("currentUserId");
+      localStorage.removeItem("userName");
+      localStorage.removeItem("userEmail");
+      
       toast({
-        title: "Logout error",
-        description: "Failed to log out. Please try again.",
-        variant: "destructive",
+        title: "Logout partially completed",
+        description: "Your session has been cleared locally. Please refresh your browser.",
       });
+      
+      navigate("/login", { replace: true });
     }
   };
 

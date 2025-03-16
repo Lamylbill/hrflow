@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { initializeForNewUser } from "./initializeForNewUser";
 
@@ -73,10 +74,27 @@ export const signIn = async (email: string, password: string) => {
 // Sign out the current user
 export const signOut = async () => {
   try {
+    // First check if we have a session before attempting to sign out
+    const { data: sessionData } = await supabase.auth.getSession();
+    
+    if (!sessionData.session) {
+      console.log("No active session found, cleaning up local storage only");
+      // No active session, but we still want to clean up local storage
+      sessionStorage.removeItem("currentUserId");
+      localStorage.removeItem("userName");
+      localStorage.removeItem("userEmail");
+      return { success: true };
+    }
+    
+    // We have a session, attempt to sign out
     const { error } = await supabase.auth.signOut();
     
     if (error) {
       console.error("Supabase signOut error:", error);
+      // Even if the API call fails, we should clean up local storage
+      sessionStorage.removeItem("currentUserId");
+      localStorage.removeItem("userName");
+      localStorage.removeItem("userEmail");
       throw error;
     }
     
@@ -91,7 +109,14 @@ export const signOut = async () => {
     return { success: true };
   } catch (error) {
     console.error("Error during signOut:", error);
-    throw error;
+    // Even after errors, ensure we clean up local storage
+    sessionStorage.removeItem("currentUserId");
+    localStorage.removeItem("userName");
+    localStorage.removeItem("userEmail");
+    
+    // Return a special flag to indicate client-side cleanup was done
+    // even if the server-side session deletion failed
+    return { success: true, clientCleanup: true, error };
   }
 };
 
