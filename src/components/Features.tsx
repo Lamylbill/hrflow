@@ -52,19 +52,24 @@ const features = [
 const Features = () => {
   const isMobile = useIsMobile();
   
+  // For mobile, show only the 3 most important features initially
+  const initialFeatures = isMobile ? features.slice(0, 3) : features;
+  
   return (
-    <section className="py-12 md:py-20 bg-secondary/50" id="features">
+    <section className="py-10 md:py-20 bg-secondary/50" id="features">
       <div className="hr-container">
-        <div className="text-center max-w-3xl mx-auto mb-8 md:mb-16 animate-slide-up px-4">
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-3 md:mb-4">HR Management for Singapore & Malaysia SMEs</h2>
-          <p className="text-base md:text-lg text-muted-foreground">
-            Simplify HR workflows with tools designed for small to medium businesses
-            in Singapore and Malaysia, ensuring full regulatory compliance.
+        <div className="text-center max-w-3xl mx-auto mb-6 md:mb-16 animate-slide-up px-4">
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-2 md:mb-4">HR Management for Singapore & Malaysia SMEs</h2>
+          <p className="text-sm md:text-lg text-muted-foreground">
+            {isMobile 
+              ? "Built for SG/MY regulations and business requirements" 
+              : "Simplify HR workflows with tools designed for small to medium businesses in Singapore and Malaysia, ensuring full regulatory compliance."}
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 px-4 md:px-0">
-          {features.map((feature, index) => (
+        {/* Initial Features - All on desktop, 3 most important on mobile */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 px-3 md:px-0">
+          {initialFeatures.map((feature, index) => (
             <Link 
               to={feature.link} 
               key={feature.title}
@@ -78,14 +83,28 @@ const Features = () => {
                 <div className={`w-10 h-10 md:w-12 md:h-12 rounded-lg ${feature.color} flex items-center justify-center mb-3 md:mb-4`}>
                   <feature.icon className="h-5 w-5 md:h-6 md:w-6" />
                 </div>
-                <h3 className="text-lg md:text-xl font-semibold mb-2">{feature.title}</h3>
-                <p className="text-muted-foreground text-sm md:text-base">{feature.description}</p>
+                <h3 className="text-lg md:text-xl font-semibold mb-1 md:mb-2">{feature.title}</h3>
+                <p className="text-muted-foreground text-sm md:text-base">
+                  {isMobile ? feature.description.split('.')[0] + '.' : feature.description}
+                </p>
               </GlassCard>
             </Link>
           ))}
         </div>
 
-        <div className="mt-10 md:mt-16 text-center px-4 md:px-0">
+        {/* Mobile-specific "See more features" button */}
+        {isMobile && (
+          <div className="text-center mt-4 px-3">
+            <Link to="/login?signup=true" className="inline-block w-full">
+              <button className="w-full bg-secondary hover:bg-secondary/70 text-foreground font-medium py-3 rounded-lg transition-colors border border-border text-sm">
+                See all features
+              </button>
+            </Link>
+          </div>
+        )}
+
+        {/* Compliance indicators */}
+        <div className="mt-8 md:mt-16 text-center px-4 md:px-0">
           <div className="inline-block px-4 md:px-6 py-2 md:py-3 border border-border rounded-lg bg-background/80 overflow-x-auto w-full max-w-full md:w-auto">
             <div className="flex flex-wrap md:flex-nowrap justify-center items-center gap-4 text-xs md:text-sm whitespace-nowrap">
               <div className="flex items-center">

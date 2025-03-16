@@ -24,7 +24,7 @@ const Index = () => {
       const element = document.getElementById(id);
       if (element) {
         // Add offset for the fixed header on mobile
-        const yOffset = isMobile ? -70 : -100;
+        const yOffset = isMobile ? -60 : -100;
         const y = element.getBoundingClientRect().top + window.scrollY + yOffset;
         
         window.scrollTo({
@@ -37,10 +37,13 @@ const Index = () => {
     }
   }, [location, isMobile]);
 
+  // On mobile, ensure optimal spacing between sections
+  const sectionClasses = isMobile ? "space-y-6" : "space-y-0";
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Navbar />
-      <main className="flex-1 pt-16">
+      <main className={`flex-1 pt-14 md:pt-16 ${sectionClasses}`}>
         <Hero />
         <Features />
         <ComplianceSection />
