@@ -1,5 +1,6 @@
 
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { PlusCircle, Search, Upload, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,7 @@ import { addEmployee, deleteEmployee, updateEmployee } from "@/utils/localStorag
 import { toast } from "@/hooks/use-toast";
 
 const Employees = () => {
+  const navigate = useNavigate();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -23,7 +25,22 @@ const Employees = () => {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [isViewingDetails, setIsViewingDetails] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [pageLoaded, setPageLoaded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Mark page as loaded
+  useEffect(() => {
+    setPageLoaded(true);
+    
+    // If page didn't load properly, reload after 3 seconds
+    const timer = setTimeout(() => {
+      if (!pageLoaded) {
+        window.location.reload();
+      }
+    }, 3000);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   // Fetch employees on mount
   useEffect(() => {
@@ -140,6 +157,12 @@ const Employees = () => {
   // Properly handle employee additions with immediate UI updates
   const handleEmployeeAdded = async () => {
     await fetchEmployees();
+    
+    // Navigate to dashboard and back to ensure dashboard gets updated with new employee count
+    navigate("/dashboard", { replace: true });
+    setTimeout(() => {
+      navigate("/employees", { replace: true });
+    }, 100);
   };
 
   const downloadEmployeeTemplate = () => {
@@ -161,6 +184,19 @@ const Employees = () => {
       title: "Template downloaded",
       description: "Employee template has been downloaded.",
     });
+  };
+
+  // Safe navigation function
+  const navigateSafely = (path: string) => {
+    navigate(path);
+    
+    // Fallback mechanism if page doesn't load within 2 seconds
+    setTimeout(() => {
+      if (window.location.pathname !== path) {
+        console.log("Page navigation timeout, forcing reload");
+        window.location.href = path;
+      }
+    }, 2000);
   };
 
   return (

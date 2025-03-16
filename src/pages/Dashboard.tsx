@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import NavbarLoggedIn from "@/components/NavbarLoggedIn";
 import Footer from "@/components/Footer";
@@ -17,16 +17,71 @@ import { Progress } from "@/components/ui/progress";
 import EmployeesTabContent from "@/components/dashboard/EmployeesTabContent";
 import LeaveTabContent from "@/components/dashboard/LeaveTabContent";
 import PayrollTabContent from "@/components/dashboard/PayrollTabContent";
+import { getEmployees } from "@/utils/localStorage";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   // Mock data for the dashboard
   const [activeTab, setActiveTab] = useState("overview");
+  const [employees, setEmployees] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Fetch employees data on mount and when employees are added/removed
+  useEffect(() => {
+    const fetchEmployeeData = async () => {
+      try {
+        setIsLoading(true);
+        const data = await getEmployees();
+        setEmployees(data);
+      } catch (error) {
+        console.error("Error fetching employees:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchEmployeeData();
+
+    // Set up a refresh interval of 5 seconds to check for updates
+    const refreshInterval = setInterval(fetchEmployeeData, 5000);
+    
+    return () => clearInterval(refreshInterval);
+  }, []);
+
+  // Calculate department distribution
+  const departmentCounts = employees.reduce((acc, employee) => {
+    acc[employee.department] = (acc[employee.department] || 0) + 1;
+    return acc;
+  }, {});
+
+  const departments = Object.keys(departmentCounts).map(name => ({
+    name,
+    count: departmentCounts[name],
+    color: getColorForDepartment(name),
+  }));
+
+  // Function to assign colors to departments
+  function getColorForDepartment(department) {
+    const colors = {
+      "Engineering": "bg-blue-500",
+      "Marketing": "bg-purple-500",
+      "Sales": "bg-green-500",
+      "HR": "bg-red-500",
+      "Finance": "bg-yellow-500",
+      "Operations": "bg-indigo-500",
+      "Product": "bg-pink-500",
+      "Design": "bg-teal-500",
+      "Customer Support": "bg-orange-500",
+    };
+    
+    return colors[department] || "bg-gray-500";
+  }
+
+  // Dashboard stats with actual employee count
   const dashboardStats = [
     {
       title: "Total Employees",
-      value: 0,
+      value: employees.length,
       description: "Active employees",
       icon: Users,
       iconColor: "bg-hr-blue/10 text-hr-blue",
@@ -58,16 +113,25 @@ const Dashboard = () => {
     // Empty by default - will be populated when user performs actions
   ];
 
-  const departments = [
-    // These will be populated from actual employee data
-  ];
+  const totalEmployees = employees.length;
 
-  const totalEmployees = dashboardStats[0].value;
+  // Add a function to handle page loading issues
+  const navigateSafely = (path) => {
+    navigate(path);
+    
+    // Fallback mechanism if the page doesn't load within 2 seconds
+    setTimeout(() => {
+      if (window.location.pathname !== path) {
+        console.log("Page navigation timeout, forcing reload");
+        window.location.href = path;
+      }
+    }, 2000);
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {
       case "employees":
-        return <EmployeesTabContent />;
+        return <EmployeesTabContent key={`employees-${employees.length}`} />;
       case "leave":
         return <LeaveTabContent />;
       case "payroll":
@@ -96,7 +160,10 @@ const Dashboard = () => {
                   {totalEmployees > 0 ? (
                     <div className="flex justify-between items-center mb-4">
                       <h2 className="text-lg font-semibold">Employee Overview</h2>
-                      <button className="text-sm text-primary hover:underline">
+                      <button 
+                        className="text-sm text-primary hover:underline"
+                        onClick={() => navigateSafely("/employees")}
+                      >
                         View All
                       </button>
                     </div>
@@ -108,7 +175,7 @@ const Dashboard = () => {
                         Start by adding employees to your organization
                       </p>
                       <button 
-                        onClick={() => navigate("/employees")} 
+                        onClick={() => navigateSafely("/employees")} 
                         className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
                       >
                         Add Employees
@@ -220,7 +287,7 @@ const Dashboard = () => {
                     ].map((action) => (
                       <button
                         key={action.name}
-                        onClick={() => navigate(action.path)}
+                        onClick={() => navigateSafely(action.path)}
                         className="flex flex-col items-center justify-center p-4 bg-secondary/50 rounded-lg hover:bg-secondary transition-colors"
                       >
                         <div className={`p-2 rounded-lg mb-2 ${action.color}`}>
@@ -321,8 +388,15 @@ const Dashboard = () => {
             </button>
           </div>
 
-          {/* Dashboard content based on active tab */}
-          {renderTabContent()}
+          {/* Show loading state if data is being fetched */}
+          {isLoading && activeTab === "overview" ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            /* Dashboard content based on active tab */
+            renderTabContent()
+          )}
         </div>
       </main>
 

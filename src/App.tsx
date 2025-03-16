@@ -1,5 +1,6 @@
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
 import "./App.css";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -20,6 +21,31 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 initializeApp();
 
 function App() {
+  // Global auto-refresh mechanism
+  useEffect(() => {
+    // Track if page is fully loaded
+    let pageLoaded = false;
+    
+    // Set a timer to check if page has loaded within 5 seconds
+    const loadTimeout = setTimeout(() => {
+      if (!pageLoaded) {
+        console.log("Page failed to load completely, triggering refresh");
+        window.location.reload();
+      }
+    }, 5000);
+    
+    // Mark as loaded when window load event fires
+    window.addEventListener('load', () => {
+      pageLoaded = true;
+      clearTimeout(loadTimeout);
+    });
+    
+    return () => {
+      clearTimeout(loadTimeout);
+      pageLoaded = true; // Prevent refresh when component unmounts
+    };
+  }, []);
+
   return (
     <Router>
       <ThemeProvider>
