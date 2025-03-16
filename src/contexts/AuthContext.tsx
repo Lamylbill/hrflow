@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { EventTypes, emitEvent } from "@/utils/eventBus";
+import { getCurrentUserId, getCurrentUserName } from "@/utils/auth";
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -17,9 +18,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [userId, setUserId] = useState<string | null>(
-    sessionStorage.getItem("currentUserId")
-  );
+  const [userId, setUserId] = useState<string | null>(getCurrentUserId());
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -39,18 +38,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         // Store user data if user is authenticated
         if (data.session?.user) {
+          // Use a tab-specific ID to prevent cross-contamination between tabs
+          let tabId = sessionStorage.getItem('tabId');
+          if (!tabId) {
+            tabId = crypto.randomUUID();
+            sessionStorage.setItem('tabId', tabId);
+          }
+          
           setUserId(data.session.user.id);
-          sessionStorage.setItem("currentUserId", data.session.user.id);
+          sessionStorage.setItem(`user:${tabId}`, data.session.user.id);
           
           // Update userName for this session/tab
           const userName = data.session.user.user_metadata?.name;
           if (userName) {
-            sessionStorage.setItem("userName", userName);
+            sessionStorage.setItem(`userName:${tabId}`, userName);
           }
           
+          // Store email
+          const email = data.session.user.email;
+          if (email) {
+            sessionStorage.setItem(`userEmail:${tabId}`, email);
+          }
         } else {
           setUserId(null);
-          sessionStorage.removeItem("currentUserId");
+          const tabId = sessionStorage.getItem('tabId');
+          if (tabId) {
+            sessionStorage.removeItem(`user:${tabId}`);
+            sessionStorage.removeItem(`userName:${tabId}`);
+            sessionStorage.removeItem(`userEmail:${tabId}`);
+          }
         }
         setIsLoading(false);
       } catch (error) {
@@ -58,7 +74,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (isMounted) {
           setIsAuthenticated(false);
           setUserId(null);
-          sessionStorage.removeItem("currentUserId");
+          const tabId = sessionStorage.getItem('tabId');
+          if (tabId) {
+            sessionStorage.removeItem(`user:${tabId}`);
+            sessionStorage.removeItem(`userName:${tabId}`);
+            sessionStorage.removeItem(`userEmail:${tabId}`);
+          }
           setIsLoading(false);
         }
       }
@@ -75,18 +96,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (event === 'SIGNED_OUT') {
         setIsAuthenticated(false);
         setUserId(null);
-        sessionStorage.removeItem("currentUserId");
+        const tabId = sessionStorage.getItem('tabId');
+        if (tabId) {
+          sessionStorage.removeItem(`user:${tabId}`);
+          sessionStorage.removeItem(`userName:${tabId}`);
+          sessionStorage.removeItem(`userEmail:${tabId}`);
+        }
         emitEvent(EventTypes.AUTH_STATUS_CHANGED, { status: 'signedOut' });
         navigate("/login", { replace: true });
       } else if (event === 'SIGNED_IN' && session?.user) {
         setIsAuthenticated(true);
         setUserId(session.user.id);
-        sessionStorage.setItem("currentUserId", session.user.id);
+        
+        // Use a tab-specific ID to prevent cross-contamination between tabs
+        let tabId = sessionStorage.getItem('tabId');
+        if (!tabId) {
+          tabId = crypto.randomUUID();
+          sessionStorage.setItem('tabId', tabId);
+        }
+        
+        sessionStorage.setItem(`user:${tabId}`, session.user.id);
         
         // Update userName for this session/tab
         const userName = session.user.user_metadata?.name;
         if (userName) {
-          sessionStorage.setItem("userName", userName);
+          sessionStorage.setItem(`userName:${tabId}`, userName);
+        }
+        
+        // Store email
+        const email = session.user.email;
+        if (email) {
+          sessionStorage.setItem(`userEmail:${tabId}`, email);
         }
         
         emitEvent(EventTypes.AUTH_STATUS_CHANGED, { status: 'signedIn' });
@@ -110,17 +150,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       setIsAuthenticated(true);
       if (data.user) {
+        // Generate a tab-specific ID
+        const tabId = crypto.randomUUID();
+        sessionStorage.setItem('tabId', tabId);
+        
         setUserId(data.user.id);
-        sessionStorage.setItem("currentUserId", data.user.id);
+        sessionStorage.setItem(`user:${tabId}`, data.user.id);
         
         // Update userName for this session/tab
         const userName = data.user.user_metadata?.name;
         if (userName) {
-          sessionStorage.setItem("userName", userName);
+          sessionStorage.setItem(`userName:${tabId}`, userName);
         }
         
         // Store email for profile
-        sessionStorage.setItem("userEmail", email);
+        sessionStorage.setItem(`userEmail:${tabId}`, email);
       }
       
       toast({
@@ -152,9 +196,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Clean up local state
         setIsAuthenticated(false);
         setUserId(null);
-        sessionStorage.removeItem("currentUserId");
-        sessionStorage.removeItem("userName");
-        sessionStorage.removeItem("userEmail");
+        const tabId = sessionStorage.getItem('tabId');
+        if (tabId) {
+          sessionStorage.removeItem(`user:${tabId}`);
+          sessionStorage.removeItem(`userName:${tabId}`);
+          sessionStorage.removeItem(`userEmail:${tabId}`);
+          sessionStorage.removeItem('tabId');
+        }
         
         toast({
           title: "Logged out successfully",
@@ -184,9 +232,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       // Clean up session storage and React state regardless of server response
-      sessionStorage.removeItem("currentUserId");
-      sessionStorage.removeItem("userName");
-      sessionStorage.removeItem("userEmail");
+      const tabId = sessionStorage.getItem('tabId');
+      if (tabId) {
+        sessionStorage.removeItem(`user:${tabId}`);
+        sessionStorage.removeItem(`userName:${tabId}`);
+        sessionStorage.removeItem(`userEmail:${tabId}`);
+        sessionStorage.removeItem('tabId');
+      }
       
       setIsAuthenticated(false);
       setUserId(null);
@@ -198,9 +250,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Ensure the user is still logged out client-side despite any errors
       setIsAuthenticated(false);
       setUserId(null);
-      sessionStorage.removeItem("currentUserId");
-      sessionStorage.removeItem("userName");
-      sessionStorage.removeItem("userEmail");
+      const tabId = sessionStorage.getItem('tabId');
+      if (tabId) {
+        sessionStorage.removeItem(`user:${tabId}`);
+        sessionStorage.removeItem(`userName:${tabId}`);
+        sessionStorage.removeItem(`userEmail:${tabId}`);
+        sessionStorage.removeItem('tabId');
+      }
       
       toast({
         title: "Logout partially completed",

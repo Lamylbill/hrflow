@@ -23,7 +23,10 @@ export const signUp = async (email: string, password: string, metadata?: { name?
   // Initialize empty data for the new user
   if (data.user) {
     // Store the user ID for THIS browser session only (not shared between tabs)
-    sessionStorage.setItem("currentUserId", data.user.id);
+    // We use a tab-specific ID key to prevent cross-contamination
+    const tabId = crypto.randomUUID();
+    sessionStorage.setItem('tabId', tabId);
+    sessionStorage.setItem(`user:${tabId}`, data.user.id);
     
     await initializeForNewUser(data.user.id);
     
@@ -32,12 +35,12 @@ export const signUp = async (email: string, password: string, metadata?: { name?
       // Store both user-specific and current-session keys
       localStorage.setItem(getUserSpecificKey(data.user.id, "userName"), metadata.name);
       // Also set the current user's name for the active session
-      sessionStorage.setItem("userName", metadata.name);
+      sessionStorage.setItem(`userName:${tabId}`, metadata.name);
     }
     
     // Store user email for profile access
     localStorage.setItem(getUserSpecificKey(data.user.id, "userEmail"), email);
-    sessionStorage.setItem("userEmail", email);
+    sessionStorage.setItem(`userEmail:${tabId}`, email);
     
     // Emit event for profile update
     emitEvent(EventTypes.USER_PROFILE_UPDATED, { 
@@ -61,20 +64,22 @@ export const signIn = async (email: string, password: string) => {
   
   // Update session storage with user data (session-specific)
   if (data.user) {
-    // Use sessionStorage for the current browser tab/window only
-    sessionStorage.setItem("currentUserId", data.user.id);
+    // Use a tab-specific ID to prevent cross-contamination between tabs
+    const tabId = crypto.randomUUID();
+    sessionStorage.setItem('tabId', tabId);
+    sessionStorage.setItem(`user:${tabId}`, data.user.id);
     
     // Store user info with user-specific prefix for persistence
     const userName = data.user.user_metadata?.name;
     if (userName) {
       localStorage.setItem(getUserSpecificKey(data.user.id, "userName"), userName);
-      // Store in sessionStorage instead of localStorage for tab-specific data
-      sessionStorage.setItem("userName", userName);
+      // Store in sessionStorage with tab-specific ID
+      sessionStorage.setItem(`userName:${tabId}`, userName);
     }
     
     // Store user email for profile access
     localStorage.setItem(getUserSpecificKey(data.user.id, "userEmail"), email);
-    sessionStorage.setItem("userEmail", email);
+    sessionStorage.setItem(`userEmail:${tabId}`, email);
     
     // Emit event for profile update
     emitEvent(EventTypes.USER_PROFILE_UPDATED, { 
@@ -90,19 +95,21 @@ export const signIn = async (email: string, password: string) => {
 // Sign out the current user
 export const signOut = async () => {
   try {
-    // Get the current user ID before attempting to sign out
-    const currentUserId = sessionStorage.getItem("currentUserId");
+    // Get the current tab ID
+    const tabId = sessionStorage.getItem('tabId');
     
     // First check if we have a session before attempting to sign out
     const { data: sessionData } = await supabase.auth.getSession();
     
     if (!sessionData.session) {
       console.log("No active session found, cleaning up local storage only");
-      // No active session, but we still want to clean up sessionStorage
-      sessionStorage.removeItem("currentUserId");
-      // Clean up the session-specific user data
-      sessionStorage.removeItem("userName");
-      sessionStorage.removeItem("userEmail");
+      // Clean up tab-specific sessionStorage
+      if (tabId) {
+        sessionStorage.removeItem(`user:${tabId}`);
+        sessionStorage.removeItem(`userName:${tabId}`);
+        sessionStorage.removeItem(`userEmail:${tabId}`);
+        sessionStorage.removeItem('tabId');
+      }
       return { success: true };
     }
     
@@ -112,19 +119,22 @@ export const signOut = async () => {
     if (error) {
       console.error("Supabase signOut error:", error);
       // Even if the API call fails, we should clean up sessionStorage
-      sessionStorage.removeItem("currentUserId");
-      sessionStorage.removeItem("userName");
-      sessionStorage.removeItem("userEmail");
+      if (tabId) {
+        sessionStorage.removeItem(`user:${tabId}`);
+        sessionStorage.removeItem(`userName:${tabId}`);
+        sessionStorage.removeItem(`userEmail:${tabId}`);
+        sessionStorage.removeItem('tabId');
+      }
       throw error;
     }
     
-    // Clear only session-specific data on logout
-    // We keep the user-specific localStorage data for future use
-    sessionStorage.removeItem("currentUserId");
-    
-    // Clear the session-specific non-prefixed user data
-    sessionStorage.removeItem("userName");
-    sessionStorage.removeItem("userEmail");
+    // Clean up tab-specific sessionStorage data on logout
+    if (tabId) {
+      sessionStorage.removeItem(`user:${tabId}`);
+      sessionStorage.removeItem(`userName:${tabId}`);
+      sessionStorage.removeItem(`userEmail:${tabId}`);
+      sessionStorage.removeItem('tabId');
+    }
     
     // Emit event for auth status change
     emitEvent(EventTypes.AUTH_STATUS_CHANGED, { status: 'signedOut' });
@@ -133,9 +143,13 @@ export const signOut = async () => {
   } catch (error) {
     console.error("Error during signOut:", error);
     // Even after errors, ensure we clean up sessionStorage
-    sessionStorage.removeItem("currentUserId");
-    sessionStorage.removeItem("userName");
-    sessionStorage.removeItem("userEmail");
+    const tabId = sessionStorage.getItem('tabId');
+    if (tabId) {
+      sessionStorage.removeItem(`user:${tabId}`);
+      sessionStorage.removeItem(`userName:${tabId}`);
+      sessionStorage.removeItem(`userEmail:${tabId}`);
+      sessionStorage.removeItem('tabId');
+    }
     
     // Emit event for auth status change
     emitEvent(EventTypes.AUTH_STATUS_CHANGED, { status: 'signedOut' });
@@ -153,13 +167,20 @@ export const getSession = async () => {
   if (error) throw error;
   
   if (data.session) {
-    // Update sessionStorage which is specific to this browser tab/window
-    sessionStorage.setItem("currentUserId", data.session.user.id);
+    // Use a tab-specific ID to prevent cross-contamination between tabs
+    let tabId = sessionStorage.getItem('tabId');
+    if (!tabId) {
+      tabId = crypto.randomUUID();
+      sessionStorage.setItem('tabId', tabId);
+    }
     
-    // Update the current session-specific user data
+    // Update sessionStorage which is specific to this browser tab/window
+    sessionStorage.setItem(`user:${tabId}`, data.session.user.id);
+    
+    // Update the current tab-specific user data
     const userName = data.session.user.user_metadata?.name;
     if (userName) {
-      sessionStorage.setItem("userName", userName);
+      sessionStorage.setItem(`userName:${tabId}`, userName);
       // Also ensure we have the user-specific data saved
       localStorage.setItem(getUserSpecificKey(data.session.user.id, "userName"), userName);
     }
@@ -167,17 +188,38 @@ export const getSession = async () => {
     // Get user email if available
     const email = data.session.user.email;
     if (email) {
-      sessionStorage.setItem("userEmail", email);
+      sessionStorage.setItem(`userEmail:${tabId}`, email);
       localStorage.setItem(getUserSpecificKey(data.session.user.id, "userEmail"), email);
     }
     
     return data.session;
   } else {
-    sessionStorage.removeItem("currentUserId");
-    sessionStorage.removeItem("userName");
-    sessionStorage.removeItem("userEmail");
+    const tabId = sessionStorage.getItem('tabId');
+    if (tabId) {
+      sessionStorage.removeItem(`user:${tabId}`);
+      sessionStorage.removeItem(`userName:${tabId}`);
+      sessionStorage.removeItem(`userEmail:${tabId}`);
+    }
     return null;
   }
+};
+
+// Helper function to get current user ID for this tab
+export const getCurrentUserId = (): string | null => {
+  const tabId = sessionStorage.getItem('tabId');
+  return tabId ? sessionStorage.getItem(`user:${tabId}`) : null;
+};
+
+// Helper function to get current user name for this tab
+export const getCurrentUserName = (): string | null => {
+  const tabId = sessionStorage.getItem('tabId');
+  return tabId ? sessionStorage.getItem(`userName:${tabId}`) : null;
+};
+
+// Helper function to get current user email for this tab
+export const getCurrentUserEmail = (): string | null => {
+  const tabId = sessionStorage.getItem('tabId');
+  return tabId ? sessionStorage.getItem(`userEmail:${tabId}`) : null;
 };
 
 // Check if user is authenticated
