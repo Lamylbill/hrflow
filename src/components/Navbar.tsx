@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import AnimatedButton from "./AnimatedButton";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { EventTypes, onEvent } from "@/utils/eventBus";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -41,13 +42,6 @@ const Navbar = () => {
     checkAuth();
     
     // Set up event listener for auth state changes
-    window.addEventListener("storage", (event) => {
-      if (event.key === "currentUserId") {
-        setIsAuthenticated(!!event.newValue);
-      }
-    });
-    
-    // Listen for custom auth status change events
     const handleAuthChange = (e: Event) => {
       const customEvent = e as CustomEvent;
       if (customEvent.detail?.status === 'signedIn') {
@@ -57,11 +51,21 @@ const Navbar = () => {
       }
     };
     
-    window.addEventListener("auth-status-changed", handleAuthChange as EventListener);
+    // Listen for auth status change events
+    window.addEventListener(EventTypes.AUTH_STATUS_CHANGED, handleAuthChange as EventListener);
+    
+    // Also listen for storage changes that might affect auth status
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === "currentUserId") {
+        setIsAuthenticated(!!event.newValue);
+      }
+    };
+    
+    window.addEventListener("storage", handleStorageChange);
     
     return () => {
-      window.removeEventListener("storage", () => {});
-      window.removeEventListener("auth-status-changed", handleAuthChange as EventListener);
+      window.removeEventListener(EventTypes.AUTH_STATUS_CHANGED, handleAuthChange as EventListener);
+      window.removeEventListener("storage", handleStorageChange);
     };
   }, []);
 
@@ -109,7 +113,7 @@ const Navbar = () => {
                   location.pathname === item.path || 
                   (item.path.startsWith("/#") && location.pathname === "/" && location.hash === item.path.substring(1))
                     ? "text-primary"
-                    : "text-foreground/80"
+                    : "text-foreground/80 dark:text-foreground/70"
                 }`}
               >
                 {item.name}
@@ -158,7 +162,7 @@ const Navbar = () => {
 
       {/* Mobile navigation */}
       {isMenuOpen && (
-        <div className="md:hidden bg-background/95 backdrop-blur-md shadow-lg animate-slide-down overflow-y-auto max-h-[calc(100vh-4rem)]">
+        <div className="md:hidden bg-background/95 dark:bg-slate-900/95 backdrop-blur-md shadow-lg animate-slide-down overflow-y-auto max-h-[calc(100vh-4rem)]">
           <div className="hr-container py-4 flex flex-col space-y-3 px-4">
             {navItems.map((item) => (
               <Link
@@ -168,7 +172,7 @@ const Navbar = () => {
                   location.pathname === item.path || 
                   (item.path.startsWith("/#") && location.pathname === "/" && location.hash === item.path.substring(1))
                     ? "bg-primary/10 text-primary"
-                    : "text-foreground/80 hover:bg-secondary/50 hover:text-foreground"
+                    : "text-foreground/80 dark:text-foreground/70 hover:bg-secondary/50 hover:text-foreground"
                 }`}
               >
                 {item.name}

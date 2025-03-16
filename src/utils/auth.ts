@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { initializeForNewUser } from "./initializeForNewUser";
+import { EventTypes, emitEvent } from "./eventBus";
 
 // Helper function to get user-specific storage keys
 const getUserSpecificKey = (userId: string, key: string): string => {
@@ -37,6 +38,13 @@ export const signUp = async (email: string, password: string, metadata?: { name?
     // Store user email for profile access
     localStorage.setItem(getUserSpecificKey(data.user.id, "userEmail"), email);
     localStorage.setItem("userEmail", email);
+    
+    // Emit event for profile update
+    emitEvent(EventTypes.USER_PROFILE_UPDATED, { 
+      userId: data.user.id, 
+      userName: metadata?.name,
+      userEmail: email
+    });
   }
   
   return { data, error: null };
@@ -67,6 +75,13 @@ export const signIn = async (email: string, password: string) => {
     // Store user email for profile access
     localStorage.setItem(getUserSpecificKey(data.user.id, "userEmail"), email);
     localStorage.setItem("userEmail", email);
+    
+    // Emit event for profile update
+    emitEvent(EventTypes.USER_PROFILE_UPDATED, { 
+      userId: data.user.id, 
+      userName,
+      userEmail: email
+    });
   }
   
   return { data, error: null };
@@ -111,6 +126,9 @@ export const signOut = async () => {
     localStorage.removeItem("userName");
     localStorage.removeItem("userEmail");
     
+    // Emit event for auth status change
+    emitEvent(EventTypes.AUTH_STATUS_CHANGED, { status: 'signedOut' });
+    
     return { success: true };
   } catch (error) {
     console.error("Error during signOut:", error);
@@ -118,6 +136,9 @@ export const signOut = async () => {
     sessionStorage.removeItem("currentUserId");
     localStorage.removeItem("userName");
     localStorage.removeItem("userEmail");
+    
+    // Emit event for auth status change
+    emitEvent(EventTypes.AUTH_STATUS_CHANGED, { status: 'signedOut' });
     
     // Return a special flag to indicate client-side cleanup was done
     // even if the server-side session deletion failed
@@ -139,6 +160,15 @@ export const getSession = async () => {
     const userName = data.session.user.user_metadata?.name;
     if (userName) {
       localStorage.setItem("userName", userName);
+      // Also ensure we have the user-specific data saved
+      localStorage.setItem(getUserSpecificKey(data.session.user.id, "userName"), userName);
+    }
+    
+    // Get user email if available
+    const email = data.session.user.email;
+    if (email) {
+      localStorage.setItem("userEmail", email);
+      localStorage.setItem(getUserSpecificKey(data.session.user.id, "userEmail"), email);
     }
     
     return data.session;
