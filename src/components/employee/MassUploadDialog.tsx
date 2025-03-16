@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -89,6 +90,9 @@ const MassUploadDialog = ({ open, onClose, onEmployeesUploaded }: MassUploadDial
         const hireDateIndex = headers.findIndex(h => h.toLowerCase().includes('hire') && h.toLowerCase().includes('date'));
         const genderIndex = headers.findIndex(h => h.toLowerCase().includes('gender'));
         const salaryIndex = headers.findIndex(h => h.toLowerCase().includes('salary'));
+        const healthInsuranceIndex = headers.findIndex(h => h.toLowerCase().includes('health') && h.toLowerCase().includes('insurance'));
+        const dentalVisionIndex = headers.findIndex(h => h.toLowerCase().includes('dental') || h.toLowerCase().includes('vision'));
+        const retirementPlanIndex = headers.findIndex(h => h.toLowerCase().includes('retirement'));
         
         if (nameIndex === -1 || positionIndex === -1 || departmentIndex === -1 || emailIndex === -1) {
           throw new Error("CSV file is missing required columns: Name, Position, Department, Email");
@@ -97,7 +101,8 @@ const MassUploadDialog = ({ open, onClose, onEmployeesUploaded }: MassUploadDial
         const employees: Omit<Employee, "id">[] = [];
         const duplicateEntries: string[] = [];
         
-        for (let i = 1; i < rows.length; i++) {
+        // Skip the first 4 rows (header + 3 example rows)
+        for (let i = 5; i < rows.length; i++) {
           if (!rows[i].trim()) continue;
           
           const values = rows[i].split(',');
@@ -111,6 +116,9 @@ const MassUploadDialog = ({ open, onClose, onEmployeesUploaded }: MassUploadDial
             hireDate: hireDateIndex !== -1 ? values[hireDateIndex]?.trim() : new Date().toISOString().split('T')[0],
             gender: genderIndex !== -1 ? values[genderIndex]?.trim() : "",
             salary: salaryIndex !== -1 ? parseFloat(values[salaryIndex]) : undefined,
+            healthInsurance: healthInsuranceIndex !== -1 ? values[healthInsuranceIndex]?.trim() : undefined,
+            dentalVisionCoverage: dentalVisionIndex !== -1 ? values[dentalVisionIndex]?.trim() : undefined,
+            retirementPlan: retirementPlanIndex !== -1 ? values[retirementPlanIndex]?.trim() : undefined,
           };
           
           if (!employee.name || !employee.position || !employee.department || !employee.email) {
@@ -174,8 +182,9 @@ const MassUploadDialog = ({ open, onClose, onEmployeesUploaded }: MassUploadDial
 
   const downloadEmployeeTemplate = () => {
     const csvContent = `Name,Position,Department,Email,Phone,EmployeeID,HireDate,Gender,DateOfBirth,Nationality,Address,EmploymentType,WorkLocation,ManagerName,Status,Salary,PayFrequency,OvertimeEligible,BonusEligible,TaxID,BankAccountDetails,EmergencyContactName,EmergencyContactRelationship,EmergencyContactPhone,EmergencyContactEmail,SecondaryEmergencyContact,HealthInsurance,DentalVisionCoverage,RetirementPlan,PTOBalance,WorkSchedule
-John Doe,Manager,Engineering,john.doe@example.com,+1-555-123-4567,EMP001,2023-01-15,Male,1980-05-10,American,123 Main St,Full-time,Headquarters,Jane Smith,Active,75000,Monthly,true,true,TAX123456,Bank Account XXXX1234,Mary Doe,Spouse,+1-555-987-6543,mary.doe@example.com,Jack Doe,Premium Health Plan,Dental & Vision Basic,401k 5% match,120,Fixed
-Jane Smith,Developer,Engineering,jane.smith@example.com,+1-555-987-6543,EMP002,2023-02-01,Female,1985-08-22,Canadian,456 Oak Ave,Full-time,Remote,John Doe,Active,65000,Monthly,false,true,TAX789012,Bank Account XXXX5678,Jack Smith,Spouse,+1-555-123-7890,jack.smith@example.com,Sarah Smith,Basic Health Plan,Dental Only,401k 3% match,80,Flexible`;
+=== EXAMPLES BELOW (start entering data from row 5) ===
+Tan Wei Ming,Senior Manager,Finance,tan.wm@example.sg,+65 9123 4567,EMP001,2021-05-15,Male,1985-10-22,Singaporean,Block 123 Clementi Road #12-34,Full-time,CBD Office,Sarah Lim,Active,8500,Monthly,true,true,S1234567A,DBS Bank XXXX1234,Li Mei,Spouse,+65 8765 4321,limei@example.sg,Tan Wei Jie,Medishield Life + Company Plan,Full Dental & Vision Coverage,CPF + Company 4% match,14,Fixed
+Sarah Lim,Director,Human Resources,sarah.lim@example.sg,+65 9876 5432,EMP002,2019-03-01,Female,1978-06-15,Singaporean,Block 45 Marine Parade Road #08-123,Full-time,CBD Office,Marcus Chen,Active,12000,Monthly,false,true,S7654321B,UOB Bank XXXX5678,Lim Jun Wei,Brother,+65 9432 1876,junwei@example.sg,Lim Mei Ling,Medishield Life + Enhanced Plan,Full Dental & Vision Coverage,CPF + Company 6% match,21,Flexible`;
     
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -329,6 +338,10 @@ Jane Smith,Developer,Engineering,jane.smith@example.com,+1-555-987-6543,EMP002,2
                   <Download className="h-4 w-4 mr-1" />
                   Download Template
                 </Button>
+              </div>
+              <div className="text-xs text-amber-600 mt-2 text-center">
+                <p>Note: Template contains examples in rows 2-4.</p>
+                <p>Start entering your data from row 5 onwards.</p>
               </div>
             </div>
             
