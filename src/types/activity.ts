@@ -12,10 +12,12 @@ export type ActivityAction =
   | "upload"
   | "duplicate_detected";
 
+export type ActivityModule = "employees" | "leave" | "payroll" | "settings";
+
 export interface ActivityLog {
   id: string;
   action: ActivityAction;
-  module: "employees" | "leave" | "payroll" | "settings";
+  module: ActivityModule;
   description: string;
   timestamp: string;
   // Can contain additional metadata
