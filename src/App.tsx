@@ -1,6 +1,6 @@
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -16,46 +16,84 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { initializeApp } from "./utils/localStorage";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { EventTypes, onEvent } from "./utils/eventBus";
 
 // Initialize localStorage with demo data
 initializeApp();
 
 function App() {
-  // Global auto-refresh mechanism - only for serious failures
+  const [appReady, setAppReady] = useState(false);
+
+  // Global state check and recovery mechanism
   useEffect(() => {
-    // Track if page is fully loaded
-    let pageLoaded = false;
+    // Mark app as ready after a short delay to allow initialization
+    const readyTimer = setTimeout(() => {
+      setAppReady(true);
+      console.log("App marked as ready");
+    }, 500);
     
-    // Set a longer timer (10 seconds) to check if page has loaded
-    const loadTimeout = setTimeout(() => {
-      if (!pageLoaded) {
-        console.log("Page failed to load completely after extended wait, triggering refresh");
-        // Store current route before refresh to return to it
-        const currentPath = window.location.pathname;
-        localStorage.setItem("lastRoute", currentPath);
-        window.location.reload();
+    // Handle authentication failures
+    const cleanupAuthListener = onEvent(
+      EventTypes.AUTH_STATUS_CHANGED,
+      (data) => {
+        console.log("Auth status change detected:", data);
+      },
+      []
+    );
+    
+    // Handle page load failures - only trigger after app is ready
+    let pageLoadTimeout: number | null = null;
+    
+    const startPageLoadCheck = () => {
+      // Clear any existing timeout
+      if (pageLoadTimeout) {
+        window.clearTimeout(pageLoadTimeout);
       }
-    }, 10000); // Increased from 5000 to 10000ms
-    
-    // Mark as loaded when window load event fires
-    window.addEventListener('load', () => {
-      pageLoaded = true;
-      clearTimeout(loadTimeout);
       
-      // Check if we're returning from a refresh and need to navigate
-      const lastRoute = localStorage.getItem("lastRoute");
-      if (lastRoute && window.location.pathname !== lastRoute) {
-        console.log("Restoring previous route:", lastRoute);
-        window.history.pushState(null, "", lastRoute);
-        localStorage.removeItem("lastRoute");
+      // Set a new timeout (8 seconds)
+      pageLoadTimeout = window.setTimeout(() => {
+        // Check if we still need to reload (page might have loaded in the meantime)
+        const pageLoadIndicator = document.querySelector('[data-page-loaded="true"]');
+        if (!pageLoadIndicator && appReady) {
+          console.log("Page failed to fully load after timeout, refreshing...");
+          // Store current route before refresh
+          const currentPath = window.location.pathname;
+          localStorage.setItem("lastRoute", currentPath);
+          
+          // Reload the page, but don't force an immediate reload to avoid constant refresh loops
+          window.location.reload();
+        }
+      }, 8000) as unknown as number;
+    };
+    
+    // Start the initial page load check
+    startPageLoadCheck();
+    
+    // Listen for route changes to reset the page load check
+    const handleRouteChange = () => {
+      startPageLoadCheck();
+    };
+    
+    window.addEventListener('popstate', handleRouteChange);
+    
+    // Listen for the custom pageLoaded event from pages
+    window.addEventListener('pageLoaded', () => {
+      if (pageLoadTimeout) {
+        window.clearTimeout(pageLoadTimeout);
+        pageLoadTimeout = null;
       }
     });
     
     return () => {
-      clearTimeout(loadTimeout);
-      pageLoaded = true; // Prevent refresh when component unmounts
+      clearTimeout(readyTimer);
+      if (pageLoadTimeout) {
+        window.clearTimeout(pageLoadTimeout);
+      }
+      cleanupAuthListener();
+      window.removeEventListener('popstate', handleRouteChange);
+      window.removeEventListener('pageLoaded', () => {});
     };
-  }, []);
+  }, [appReady]);
 
   return (
     <Router>

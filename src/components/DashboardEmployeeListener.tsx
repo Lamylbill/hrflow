@@ -1,5 +1,6 @@
 
 import { useEffect } from 'react';
+import { EventTypes, onEvent } from '@/utils/eventBus';
 
 interface DashboardEmployeeListenerProps {
   onEmployeeChange: () => void;
@@ -11,16 +12,25 @@ interface DashboardEmployeeListenerProps {
  */
 const DashboardEmployeeListener = ({ onEmployeeChange }: DashboardEmployeeListenerProps) => {
   useEffect(() => {
-    // Listen for the custom event that indicates employee data has changed
-    const handleEmployeeDataChanged = () => {
-      console.log("Employee data change detected, refreshing dashboard data");
+    console.log("DashboardEmployeeListener mounted, setting up listeners");
+    
+    // Listen for employee data changes using the event bus
+    const cleanup = onEvent(EventTypes.EMPLOYEE_DATA_CHANGED, (data) => {
+      console.log("Employee data change detected via event bus:", data);
+      onEmployeeChange();
+    });
+    
+    // Also listen for the legacy custom event for backward compatibility
+    const handleLegacyEvent = () => {
+      console.log("Employee data change detected via legacy event");
       onEmployeeChange();
     };
-
-    window.addEventListener('employee-data-changed', handleEmployeeDataChanged);
+    
+    window.addEventListener('employee-data-changed', handleLegacyEvent);
     
     return () => {
-      window.removeEventListener('employee-data-changed', handleEmployeeDataChanged);
+      cleanup();
+      window.removeEventListener('employee-data-changed', handleLegacyEvent);
     };
   }, [onEmployeeChange]);
 

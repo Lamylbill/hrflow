@@ -10,7 +10,8 @@ export enum EventTypes {
   LEAVE_DATA_CHANGED = 'leave-data-changed',
   PAYROLL_DATA_CHANGED = 'payroll-data-changed', 
   AUTH_STATUS_CHANGED = 'auth-status-changed',
-  PAGE_LOAD_FAILED = 'page-load-failed'
+  PAGE_LOAD_FAILED = 'page-load-failed',
+  PAGE_LOADED = 'pageLoaded'
 }
 
 // Trigger an event to notify listeners
@@ -22,7 +23,7 @@ export const emitEvent = (eventType: EventTypes, data?: any) => {
 
 // Subscribe to an event
 export const onEvent = (
-  eventType: EventTypes, 
+  eventType: EventTypes | string, 
   handler: (data?: any) => void, 
   dependencies: React.DependencyList = []
 ): (() => void) => {
@@ -38,6 +39,22 @@ export const onEvent = (
   return () => {
     window.removeEventListener(eventType, handlerWrapper);
   };
+};
+
+// Helper function to mark a page as successfully loaded
+export const markPageAsLoaded = (pageId: string) => {
+  console.log(`Page ${pageId} marked as loaded`);
+  
+  // Add a data attribute to the body for the global load check
+  const loadIndicator = document.createElement('div');
+  loadIndicator.setAttribute('data-page-loaded', 'true');
+  loadIndicator.setAttribute('data-page-id', pageId);
+  loadIndicator.style.display = 'none';
+  document.body.appendChild(loadIndicator);
+  
+  // Emit the page loaded event
+  window.dispatchEvent(new Event('pageLoaded'));
+  emitEvent(EventTypes.PAGE_LOADED, { pageId });
 };
 
 /**
