@@ -40,7 +40,7 @@ export const signIn = async (email: string, password: string) => {
   
   if (error) throw error;
   
-  // Initialize empty data structures for the user
+  // Update localStorage with user data
   if (data.user) {
     // Store the user ID for reference
     localStorage.setItem("currentUserId", data.user.id);

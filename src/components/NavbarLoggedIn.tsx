@@ -31,7 +31,6 @@ const NavbarLoggedIn = () => {
   const location = useLocation();
   const isMobile = useIsMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
 
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -110,10 +109,7 @@ const NavbarLoggedIn = () => {
             )}
           </div>
           <div className="flex items-center">
-            <NotificationsDropdown 
-              showDropdown={showNotifications} 
-              onToggle={setShowNotifications}
-            />
+            <NotificationsDropdown />
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -124,16 +120,16 @@ const NavbarLoggedIn = () => {
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" sideOffset={4} className="w-56">
                 <DropdownMenuLabel>Admin User</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link to="/settings">
+                  <Link to="/settings" className="flex items-center w-full cursor-pointer">
                     <Settings className="mr-2 h-4 w-4" />
                     Settings
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleLogout}>
+                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
                   <LogOut className="mr-2 h-4 w-4" />
                   Log out
                 </DropdownMenuItem>

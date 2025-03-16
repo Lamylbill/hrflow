@@ -10,6 +10,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   userId: string | null;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -128,7 +129,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async (): Promise<void> => {
     try {
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        throw error;
+      }
       
       // Clear all localStorage data on logout
       localStorage.clear();
@@ -142,7 +147,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
       
       navigate("/login", { replace: true });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Logout error:", error);
       
       toast({
@@ -154,15 +159,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, userId, login, logout }}>
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center min-h-screen">
-          <div className="h-10 w-10 border-4 border-t-transparent border-primary rounded-full animate-spin mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      ) : (
-        children
-      )}
+    <AuthContext.Provider value={{ isAuthenticated, userId, login, logout, isLoading }}>
+      {children}
     </AuthContext.Provider>
   );
 };

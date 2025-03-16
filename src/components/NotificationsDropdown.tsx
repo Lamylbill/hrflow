@@ -1,6 +1,8 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Bell, Check, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface Notification {
   id: string;
@@ -14,12 +16,11 @@ interface Notification {
 interface NotificationsDropdownProps {
   showDropdown?: boolean;
   onToggle?: (show: boolean) => void;
-  onMouseLeave?: () => void;
 }
 
-const NotificationsDropdown = ({ showDropdown, onToggle, onMouseLeave }: NotificationsDropdownProps) => {
+const NotificationsDropdown = ({ onToggle }: NotificationsDropdownProps) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
-
+  
   useEffect(() => {
     // Load notifications from localStorage or initialize with empty array
     const storedNotifications = localStorage.getItem("notifications");
@@ -111,74 +112,83 @@ const NotificationsDropdown = ({ showDropdown, onToggle, onMouseLeave }: Notific
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <div 
-      className="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg z-50 overflow-hidden max-h-[80vh] flex flex-col"
-      onMouseLeave={onMouseLeave}
-    >
-      <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-        <div className="flex items-center">
-          <Bell className="h-4 w-4 mr-2 text-primary" />
-          <span className="font-medium">Notifications</span>
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="icon" className="relative">
+          <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <span className="ml-2 px-2 py-0.5 bg-primary text-white text-xs rounded-full">
+            <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-primary text-xs flex items-center justify-center text-white">
               {unreadCount}
             </span>
           )}
-        </div>
-        {unreadCount > 0 && (
-          <button 
-            onClick={markAllAsRead}
-            className="text-xs text-primary hover:text-primary/80"
-          >
-            Mark all as read
-          </button>
-        )}
-      </div>
-      
-      <div className="overflow-y-auto flex-grow">
-        {notifications.length === 0 ? (
-          <div className="p-4 text-center text-gray-500">No notifications</div>
-        ) : (
-          notifications.map(notification => (
-            <div 
-              key={notification.id} 
-              className={`p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors ${notification.read ? 'bg-white' : 'bg-blue-50'}`}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80 p-0">
+        <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+          <div className="flex items-center">
+            <Bell className="h-4 w-4 mr-2 text-primary" />
+            <span className="font-medium">Notifications</span>
+            {unreadCount > 0 && (
+              <span className="ml-2 px-2 py-0.5 bg-primary text-white text-xs rounded-full">
+                {unreadCount}
+              </span>
+            )}
+          </div>
+          {unreadCount > 0 && (
+            <button 
+              onClick={markAllAsRead}
+              className="text-xs text-primary hover:text-primary/80"
             >
-              <div className="flex justify-between">
-                <span className={`text-xs px-2 py-0.5 rounded ${getTypeColor(notification.type)}`}>
-                  {notification.type.charAt(0).toUpperCase() + notification.type.slice(1)}
-                </span>
-                <div className="flex space-x-1">
-                  {!notification.read && (
+              Mark all as read
+            </button>
+          )}
+        </div>
+        
+        <div className="max-h-72 overflow-y-auto">
+          {notifications.length === 0 ? (
+            <div className="p-4 text-center text-gray-500">No notifications</div>
+          ) : (
+            notifications.map(notification => (
+              <div 
+                key={notification.id} 
+                className={`p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors ${notification.read ? 'bg-white' : 'bg-blue-50'}`}
+              >
+                <div className="flex justify-between">
+                  <span className={`text-xs px-2 py-0.5 rounded ${getTypeColor(notification.type)}`}>
+                    {notification.type.charAt(0).toUpperCase() + notification.type.slice(1)}
+                  </span>
+                  <div className="flex space-x-1">
+                    {!notification.read && (
+                      <button 
+                        onClick={() => markAsRead(notification.id)}
+                        className="text-gray-400 hover:text-primary"
+                      >
+                        <Check className="h-4 w-4" />
+                      </button>
+                    )}
                     <button 
-                      onClick={() => markAsRead(notification.id)}
-                      className="text-gray-400 hover:text-primary"
+                      onClick={() => removeNotification(notification.id)}
+                      className="text-gray-400 hover:text-red-500"
                     >
-                      <Check className="h-4 w-4" />
+                      <X className="h-4 w-4" />
                     </button>
-                  )}
-                  <button 
-                    onClick={() => removeNotification(notification.id)}
-                    className="text-gray-400 hover:text-red-500"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+                  </div>
                 </div>
+                <div className="font-medium text-sm mt-1">{notification.title}</div>
+                <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+                <div className="text-xs text-gray-400 mt-2">{formatTime(notification.timestamp)}</div>
               </div>
-              <div className="font-medium text-sm mt-1">{notification.title}</div>
-              <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
-              <div className="text-xs text-gray-400 mt-2">{formatTime(notification.timestamp)}</div>
-            </div>
-          ))
-        )}
-      </div>
-      
-      <div className="p-3 text-center border-t border-gray-200">
-        <button className="text-sm text-primary hover:text-primary/80">
-          View all notifications
-        </button>
-      </div>
-    </div>
+            ))
+          )}
+        </div>
+        
+        <div className="p-3 text-center border-t border-gray-200">
+          <button className="text-sm text-primary hover:text-primary/80">
+            View all notifications
+          </button>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 };
 

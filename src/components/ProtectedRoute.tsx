@@ -11,17 +11,22 @@ interface ProtectedRouteProps {
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
-    // If not authenticated, redirect to login
-    if (!isAuthenticated && location.pathname !== "/login" && location.pathname !== "/") {
+    // Only redirect if authentication check is done (not loading) and user is not authenticated
+    if (!isLoading && !isAuthenticated && location.pathname !== "/login" && location.pathname !== "/") {
       navigate("/login", { replace: true });
     }
-  }, [isAuthenticated, navigate, location.pathname]);
+  }, [isAuthenticated, isLoading, navigate, location.pathname]);
+
+  // Show loading indicator only during initial auth check
+  if (isLoading) {
+    return <AuthLoadingIndicator message="Checking authentication..." />;
+  }
 
   // If authenticated, render the children
-  return isAuthenticated ? <>{children}</> : <AuthLoadingIndicator message="Checking authentication..." />;
+  return isAuthenticated ? <>{children}</> : null;
 };
 
 export default ProtectedRoute;
