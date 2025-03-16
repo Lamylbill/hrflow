@@ -1,8 +1,8 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Bell, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Notification {
   id: string;
@@ -20,68 +20,55 @@ interface NotificationsDropdownProps {
 
 const NotificationsDropdown = ({ onToggle }: NotificationsDropdownProps) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const { userId } = useAuth();
   
   useEffect(() => {
-    // Load notifications from localStorage or initialize with empty array
-    const storedNotifications = localStorage.getItem("notifications");
+    if (!userId) return;
+    
+    // Load user-specific notifications from localStorage
+    const userSpecificKey = `${userId}:notifications`;
+    const storedNotifications = localStorage.getItem(userSpecificKey);
+    
     if (storedNotifications) {
       setNotifications(JSON.parse(storedNotifications));
-    } else {
-      // Add some example notifications for UI demonstration
-      const demoNotifications: Notification[] = [
-        {
-          id: "1",
-          title: "Leave Request Approved",
-          message: "Your leave request has been approved by HR.",
-          timestamp: new Date(Date.now() - 3600000).toISOString(),
-          read: false,
-          type: "success"
-        },
-        {
-          id: "2",
-          title: "New Employee Joined",
-          message: "Sarah Johnson has joined the Engineering team.",
-          timestamp: new Date(Date.now() - 86400000).toISOString(),
-          read: false,
-          type: "info"
-        },
-        {
-          id: "3",
-          title: "Payroll Processing",
-          message: "Monthly payroll is being processed.",
-          timestamp: new Date(Date.now() - 172800000).toISOString(),
-          read: true,
-          type: "info"
-        }
-      ];
-      setNotifications(demoNotifications);
-      localStorage.setItem("notifications", JSON.stringify(demoNotifications));
     }
-  }, []);
+  }, [userId]);
 
   const markAsRead = (id: string) => {
+    if (!userId) return;
+    
     const updatedNotifications = notifications.map(notification => 
       notification.id === id ? { ...notification, read: true } : notification
     );
     setNotifications(updatedNotifications);
-    localStorage.setItem("notifications", JSON.stringify(updatedNotifications));
+    
+    const userSpecificKey = `${userId}:notifications`;
+    localStorage.setItem(userSpecificKey, JSON.stringify(updatedNotifications));
   };
 
   const markAllAsRead = () => {
+    if (!userId) return;
+    
     const updatedNotifications = notifications.map(notification => ({
       ...notification,
       read: true
     }));
     setNotifications(updatedNotifications);
-    localStorage.setItem("notifications", JSON.stringify(updatedNotifications));
+    
+    const userSpecificKey = `${userId}:notifications`;
+    localStorage.setItem(userSpecificKey, JSON.stringify(updatedNotifications));
   };
 
   const removeNotification = (id: string) => {
+    if (!userId) return;
+    
     const updatedNotifications = notifications.filter(
       notification => notification.id !== id
     );
     setNotifications(updatedNotifications);
-    localStorage.setItem("notifications", JSON.stringify(updatedNotifications));
+    
+    const userSpecificKey = `${userId}:notifications`;
+    localStorage.setItem(userSpecificKey, JSON.stringify(updatedNotifications));
   };
 
   const formatTime = (timestamp: string) => {

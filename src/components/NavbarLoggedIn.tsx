@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -27,10 +26,21 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const NavbarLoggedIn = () => {
-  const { logout } = useAuth();
+  const { logout, userId } = useAuth();
   const location = useLocation();
   const isMobile = useIsMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userName, setUserName] = useState<string>("User");
+
+  useEffect(() => {
+    // Get user name from localStorage
+    if (userId) {
+      const storedName = localStorage.getItem("userName");
+      if (storedName) {
+        setUserName(storedName);
+      }
+    }
+  }, [userId]);
 
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -46,6 +56,14 @@ const NavbarLoggedIn = () => {
     } catch (error) {
       console.error("Logout error:", error);
     }
+  };
+
+  // Get user initials for the avatar fallback
+  const getInitials = () => {
+    if (!userName) return "U";
+    const parts = userName.split(" ");
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
   };
 
   const menuItems = [
@@ -113,15 +131,16 @@ const NavbarLoggedIn = () => {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="ml-2 relative h-9 w-9 rounded-full">
+                <Button variant="ghost" className="ml-2 relative flex items-center gap-2 rounded-full px-2">
+                  <span className="hidden md:block text-sm font-medium">{userName}</span>
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src="/placeholder.svg" alt="User" />
-                    <AvatarFallback>AU</AvatarFallback>
+                    <AvatarImage src="/placeholder.svg" alt={userName} />
+                    <AvatarFallback>{getInitials()}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" sideOffset={4} className="w-56">
-                <DropdownMenuLabel>Admin User</DropdownMenuLabel>
+                <DropdownMenuLabel>{userName}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link to="/settings" className="flex items-center w-full cursor-pointer">

@@ -2,6 +2,11 @@
 import { supabase } from "@/integrations/supabase/client";
 import { initializeForNewUser } from "./initializeForNewUser";
 
+// Helper function to get user-specific storage keys
+const getUserSpecificKey = (userId: string, key: string): string => {
+  return `${userId}:${key}`;
+};
+
 // Sign up a new user
 export const signUp = async (email: string, password: string, metadata?: { name?: string; plan?: string }) => {
   const { data, error } = await supabase.auth.signUp({
