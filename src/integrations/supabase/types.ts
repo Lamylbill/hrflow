@@ -80,6 +80,7 @@ export type Database = {
           tax_id: string | null
           training_certifications: Json | null
           updated_at: string | null
+          user_id: string | null
           work_location: string | null
           work_schedule: string | null
         }
@@ -123,6 +124,7 @@ export type Database = {
           tax_id?: string | null
           training_certifications?: Json | null
           updated_at?: string | null
+          user_id?: string | null
           work_location?: string | null
           work_schedule?: string | null
         }
@@ -166,6 +168,7 @@ export type Database = {
           tax_id?: string | null
           training_certifications?: Json | null
           updated_at?: string | null
+          user_id?: string | null
           work_location?: string | null
           work_schedule?: string | null
         }

@@ -41,16 +41,19 @@ export const initializeForNewUser = async (userId: string) => {
   localStorage.setItem("currentUserId", userId);
   
   // Setup basic notifications
-  const welcomeNotification = [{
+  const welcomeNotification = {
     id: Date.now().toString(),
     title: "Welcome to HR Flow",
     message: "Thank you for creating an account. Get started by adding employees to your database.",
     timestamp: new Date().toISOString(),
     read: false,
     type: "info"
-  }];
+  };
   
-  localStorage.setItem(getUserSpecificKey(userId, "notifications"), JSON.stringify(welcomeNotification));
+  localStorage.setItem(
+    getUserSpecificKey(userId, "notifications"), 
+    JSON.stringify([welcomeNotification])
+  );
   
   // STEP 3: Check if there's any Supabase data for this user and clear it
   try {
