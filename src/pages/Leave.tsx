@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import NavbarLoggedIn from "@/components/NavbarLoggedIn";
 import Footer from "@/components/Footer";
@@ -21,7 +20,6 @@ const Leave = () => {
   const [massUploadOpen, setMassUploadOpen] = useState(false);
 
   useEffect(() => {
-    // Load leave requests from localStorage
     loadLeaveRequests();
   }, []);
 
@@ -34,7 +32,6 @@ const Leave = () => {
     }
   };
 
-  // Filter leave requests
   const filteredLeaveRequests = leaveRequests.filter((leave) => {
     const matchesSearch = leave.employeeName
       .toLowerCase()
@@ -59,10 +56,12 @@ const Leave = () => {
   };
 
   const downloadLeaveTemplate = () => {
-    // Create a template CSV string
-    const csvContent = `EmployeeName,LeaveType,StartDate,EndDate,Reason\nJohn Doe,Annual Leave,2023-06-01,2023-06-05,Family vacation\nJane Smith,Sick Leave,2023-06-10,2023-06-11,Doctor's appointment`;
+    const csvContent = `EmployeeName,LeaveType,StartDate,EndDate,Reason,Status
+John Doe,Annual Leave,2023-06-01,2023-06-05,Family vacation,pending
+Jane Smith,Sick Leave,2023-06-10,2023-06-11,Doctor's appointment,approved
+Sam Johnson,Parental Leave,2023-07-15,2023-08-15,New baby,pending
+Mary Williams,Bereavement Leave,2023-06-20,2023-06-23,Family funeral,approved`;
     
-    // Create a blob and download link
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -80,7 +79,6 @@ const Leave = () => {
 
       <main className="flex-grow pt-24 pb-12 page-transition">
         <div className="hr-container">
-          {/* Page header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
             <div>
               <h1 className="text-3xl font-bold">Leave Management</h1>
@@ -110,10 +108,8 @@ const Leave = () => {
             </div>
           </div>
 
-          {/* Stats */}
           <LeaveStats leaveRequests={leaveRequests} />
 
-          {/* Filters */}
           <LeaveFilters 
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
@@ -121,7 +117,6 @@ const Leave = () => {
             setFilterStatus={setFilterStatus}
           />
 
-          {/* Tabbed content */}
           <LeaveTabContent 
             filteredLeaveRequests={filteredLeaveRequests} 
             onStatusChange={handleLeaveStatusChange}
@@ -131,7 +126,6 @@ const Leave = () => {
 
       <Footer />
       
-      {/* Add Leave Request Dialog */}
       <AddLeaveRequestDialog 
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
@@ -139,7 +133,6 @@ const Leave = () => {
         employees={leaveRequests.map(lr => lr.employeeName)}
       />
       
-      {/* Mass Upload Leave Dialog */}
       <MassUploadLeaveDialog
         open={massUploadOpen}
         onClose={() => setMassUploadOpen(false)}

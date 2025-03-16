@@ -173,7 +173,9 @@ const MassUploadDialog = ({ open, onClose, onEmployeesUploaded }: MassUploadDial
   };
 
   const downloadEmployeeTemplate = () => {
-    const csvContent = `Name,Position,Department,Email,Phone,EmployeeID,HireDate,Gender,DateOfBirth,Nationality,Address,EmploymentType,WorkLocation,ManagerName,Status,Salary,PayFrequency,EmergencyContactName,EmergencyContactRelationship,EmergencyContactPhone,EmergencyContactEmail\nJohn Doe,Manager,Engineering,john.doe@example.com,+1-555-123-4567,EMP001,2023-01-15,Male,1980-05-10,American,123 Main St,Full-time,Headquarters,Jane Smith,Active,75000,Monthly,Mary Doe,Spouse,+1-555-987-6543,mary.doe@example.com\nJane Smith,Developer,Engineering,jane.smith@example.com,+1-555-987-6543,EMP002,2023-02-01,Female,1985-08-22,Canadian,456 Oak Ave,Full-time,Remote,John Doe,Active,65000,Monthly,Jack Smith,Spouse,+1-555-123-7890,jack.smith@example.com`;
+    const csvContent = `Name,Position,Department,Email,Phone,EmployeeID,HireDate,Gender,DateOfBirth,Nationality,Address,EmploymentType,WorkLocation,ManagerName,Status,Salary,PayFrequency,OvertimeEligible,BonusEligible,TaxID,BankAccountDetails,EmergencyContactName,EmergencyContactRelationship,EmergencyContactPhone,EmergencyContactEmail,SecondaryEmergencyContact,HealthInsurance,DentalVisionCoverage,RetirementPlan,PTOBalance,WorkSchedule
+John Doe,Manager,Engineering,john.doe@example.com,+1-555-123-4567,EMP001,2023-01-15,Male,1980-05-10,American,123 Main St,Full-time,Headquarters,Jane Smith,Active,75000,Monthly,true,true,TAX123456,Bank Account XXXX1234,Mary Doe,Spouse,+1-555-987-6543,mary.doe@example.com,Jack Doe,Premium Health Plan,Dental & Vision Basic,401k 5% match,120,Fixed
+Jane Smith,Developer,Engineering,jane.smith@example.com,+1-555-987-6543,EMP002,2023-02-01,Female,1985-08-22,Canadian,456 Oak Ave,Full-time,Remote,John Doe,Active,65000,Monthly,false,true,TAX789012,Bank Account XXXX5678,Jack Smith,Spouse,+1-555-123-7890,jack.smith@example.com,Sarah Smith,Basic Health Plan,Dental Only,401k 3% match,80,Flexible`;
     
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -187,7 +189,7 @@ const MassUploadDialog = ({ open, onClose, onEmployeesUploaded }: MassUploadDial
     
     toast({
       title: "Template downloaded",
-      description: "Employee template has been downloaded.",
+      description: "Complete employee template has been downloaded.",
     });
   };
 
