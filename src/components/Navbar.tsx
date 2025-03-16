@@ -50,6 +50,7 @@ const Navbar = () => {
     { name: "Home", path: "/" },
     { name: "Features", path: "/#features" },
     { name: "Pricing", path: "/#pricing" },
+    { name: "Compliance", path: "/#compliance" },
     { name: "About", path: "/#about" },
     { name: "Contact", path: "/#contact" },
   ];
@@ -69,6 +70,7 @@ const Navbar = () => {
         >
           <span className="bg-primary text-white px-2 py-1 rounded-md">HR</span>
           <span className="tracking-tight">Flow</span>
+          <span className="text-xs font-normal text-muted-foreground mt-1">SG/MY</span>
         </Link>
 
         {/* Desktop navigation */}

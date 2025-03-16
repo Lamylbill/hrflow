@@ -1,48 +1,48 @@
 
 import GlassCard from "./GlassCard";
-import { Users, Calendar, CreditCard, FileText, Search, BarChart, Building, DollarSign } from "lucide-react";
+import { Users, Calendar, CreditCard, FileText, Search, BarChart, Building, DollarSign, Shield, Award, BookOpen } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const features = [
   {
-    title: "Employee Database",
-    description: "Centralize employee records with secure storage and easy access to important information.",
+    title: "Employee Management",
+    description: "Centralize employee records with secure storage and easy access to personnel information.",
     icon: Users,
     color: "bg-hr-blue/10 text-hr-blue",
     link: "/employees"
   },
   {
     title: "Leave Management",
-    description: "Streamline leave requests with an automated approval system and calendar integration.",
+    description: "Streamline leave requests with an automated approval system aligned with SG/MY employment regulations.",
     icon: Calendar,
     color: "bg-hr-purple/10 text-hr-purple",
     link: "/leave"
   },
   {
     title: "Payroll Processing",
-    description: "Automate salary calculations and maintain detailed payroll history for all employees.",
+    description: "Automate salary calculations with CPF (SG) and EPF (MY) contribution calculations built-in.",
     icon: DollarSign,
     color: "bg-hr-teal/10 text-hr-teal",
     link: "/payroll"
   },
   {
-    title: "Document Management",
-    description: "Securely store, organize and retrieve HR-related documents with ease.",
-    icon: FileText,
+    title: "Compliance Dashboard",
+    description: "Stay compliant with MOM, IRAS (Singapore) and LHDN, SOCSO (Malaysia) regulations automatically.",
+    icon: Shield,
     color: "bg-hr-indigo/10 text-hr-indigo",
     link: "/dashboard"
   },
   {
-    title: "AI-Powered Search",
-    description: "Find relevant information quickly with our intelligent search functionality.",
+    title: "AI-Powered Insights",
+    description: "Generate reports and gain insights using natural language queries for data-driven HR decisions.",
     icon: Search,
     color: "bg-hr-lightblue/10 text-hr-lightblue",
     link: "/dashboard"
   },
   {
-    title: "Advanced Reporting",
-    description: "Generate detailed reports with natural language queries for data-driven decisions.",
-    icon: BarChart,
+    title: "Performance Management",
+    description: "Track employee performance, conduct reviews, and manage career development plans.",
+    icon: Award,
     color: "bg-hr-slate/10 text-hr-slate",
     link: "/dashboard"
   }
@@ -50,12 +50,13 @@ const features = [
 
 const Features = () => {
   return (
-    <section className="py-20 bg-secondary/50">
+    <section className="py-20 bg-secondary/50" id="features">
       <div className="hr-container">
         <div className="text-center max-w-3xl mx-auto mb-16 animate-slide-up">
-          <h2 className="text-3xl font-bold tracking-tight mb-4">Everything you need to manage your HR operations</h2>
+          <h2 className="text-3xl font-bold tracking-tight mb-4">HR Management Tailored for Singapore & Malaysia SMEs</h2>
           <p className="text-lg text-muted-foreground">
-            HRFlow combines powerful features with an intuitive interface, designed specifically for small to medium businesses.
+            Simplify HR workflows with comprehensive tools designed specifically for small to medium businesses
+            in Singapore and Malaysia, ensuring full regulatory compliance.
           </p>
         </div>
 
@@ -79,6 +80,27 @@ const Features = () => {
               </GlassCard>
             </Link>
           ))}
+        </div>
+
+        <div className="mt-16 text-center">
+          <div className="inline-block px-6 py-3 border border-border rounded-lg bg-background/80">
+            <div className="flex items-center space-x-4 text-sm">
+              <div className="flex items-center">
+                <BookOpen className="h-4 w-4 mr-2 text-primary" />
+                <span>CPF/EPF Compliant</span>
+              </div>
+              <div className="hidden sm:block h-4 w-px bg-border"></div>
+              <div className="flex items-center">
+                <Shield className="h-4 w-4 mr-2 text-primary" />
+                <span>MOM/MOHR Aligned</span>
+              </div>
+              <div className="hidden sm:block h-4 w-px bg-border"></div>
+              <div className="flex items-center">
+                <Building className="h-4 w-4 mr-2 text-primary" />
+                <span>IRAS/LHDN Ready</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
