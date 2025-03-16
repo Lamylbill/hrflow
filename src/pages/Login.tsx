@@ -86,29 +86,29 @@ const Login = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100">
+    <div className="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900">
       {/* Header Navigation Banner - Styled like the landing page */}
-      <nav className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 py-4 bg-white shadow-sm">
+      <nav className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 py-4 bg-white dark:bg-gray-800 shadow-sm">
         <div className="hr-container flex items-center justify-between">
           <Link
             to="/"
             className="flex items-center space-x-2 text-primary font-semibold text-xl"
           >
             <span className="bg-primary text-white px-2 py-1 rounded-md">HR</span>
-            <span className="tracking-tight">Flow</span>
+            <span className="tracking-tight dark:text-white">Flow</span>
           </Link>
           
-          <Link to="/" className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors">
+          <Link to="/" className="text-sm font-medium text-foreground/80 dark:text-white dark:text-opacity-80 hover:text-primary transition-colors">
             Return to Home
           </Link>
         </div>
       </nav>
       
       <div className="flex-grow flex items-center justify-center py-10 pt-24">
-        <Card className="w-full max-w-md shadow-lg">
+        <Card className="w-full max-w-md shadow-lg dark:bg-gray-800">
           <CardHeader className="text-center">
-            <CardTitle className="text-3xl">HR Management</CardTitle>
-            <CardDescription>Login to access your HR dashboard</CardDescription>
+            <CardTitle className="text-3xl dark:text-white">HR Management</CardTitle>
+            <CardDescription className="dark:text-gray-300">Login to access your HR dashboard</CardDescription>
           </CardHeader>
           <Tabs defaultValue={defaultTab} value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
@@ -119,7 +119,7 @@ const Login = () => {
               <form onSubmit={handleLogin}>
                 <CardContent className="space-y-4 pt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email" className="dark:text-white">Email</Label>
                     <Input
                       id="email"
                       type="email"
@@ -127,10 +127,11 @@ const Login = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
+                      className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="password" className="dark:text-white">Password</Label>
                     <Input
                       id="password"
                       type="password"
@@ -138,6 +139,7 @@ const Login = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
+                      className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
                     />
                   </div>
                 </CardContent>
@@ -156,7 +158,7 @@ const Login = () => {
               <form onSubmit={handleSignUp}>
                 <CardContent className="space-y-4 pt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signup-name">Name</Label>
+                    <Label htmlFor="signup-name" className="dark:text-white">Name</Label>
                     <Input
                       id="signup-name"
                       type="text"
@@ -164,10 +166,11 @@ const Login = () => {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       required
+                      className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
+                    <Label htmlFor="signup-email" className="dark:text-white">Email</Label>
                     <Input
                       id="signup-email"
                       type="email"
@@ -175,10 +178,11 @@ const Login = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
+                      className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
+                    <Label htmlFor="signup-password" className="dark:text-white">Password</Label>
                     <Input
                       id="signup-password"
                       type="password"
@@ -186,6 +190,7 @@ const Login = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
+                      className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
                     />
                   </div>
                 </CardContent>

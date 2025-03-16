@@ -22,7 +22,7 @@ export const signUp = async (email: string, password: string, metadata?: { name?
   
   // Initialize empty data for the new user
   if (data.user) {
-    // Store the user ID for THIS browser session only
+    // Store the user ID for THIS browser session only (not shared between tabs)
     sessionStorage.setItem("currentUserId", data.user.id);
     
     await initializeForNewUser(data.user.id);
@@ -32,12 +32,12 @@ export const signUp = async (email: string, password: string, metadata?: { name?
       // Store both user-specific and current-session keys
       localStorage.setItem(getUserSpecificKey(data.user.id, "userName"), metadata.name);
       // Also set the current user's name for the active session
-      localStorage.setItem("userName", metadata.name);
+      sessionStorage.setItem("userName", metadata.name);
     }
     
     // Store user email for profile access
     localStorage.setItem(getUserSpecificKey(data.user.id, "userEmail"), email);
-    localStorage.setItem("userEmail", email);
+    sessionStorage.setItem("userEmail", email);
     
     // Emit event for profile update
     emitEvent(EventTypes.USER_PROFILE_UPDATED, { 
@@ -68,13 +68,13 @@ export const signIn = async (email: string, password: string) => {
     const userName = data.user.user_metadata?.name;
     if (userName) {
       localStorage.setItem(getUserSpecificKey(data.user.id, "userName"), userName);
-      // Also set the current active user name
-      localStorage.setItem("userName", userName);
+      // Store in sessionStorage instead of localStorage for tab-specific data
+      sessionStorage.setItem("userName", userName);
     }
     
     // Store user email for profile access
     localStorage.setItem(getUserSpecificKey(data.user.id, "userEmail"), email);
-    localStorage.setItem("userEmail", email);
+    sessionStorage.setItem("userEmail", email);
     
     // Emit event for profile update
     emitEvent(EventTypes.USER_PROFILE_UPDATED, { 
@@ -100,9 +100,9 @@ export const signOut = async () => {
       console.log("No active session found, cleaning up local storage only");
       // No active session, but we still want to clean up sessionStorage
       sessionStorage.removeItem("currentUserId");
-      // Clean up the non-prefixed current user data
-      localStorage.removeItem("userName");
-      localStorage.removeItem("userEmail");
+      // Clean up the session-specific user data
+      sessionStorage.removeItem("userName");
+      sessionStorage.removeItem("userEmail");
       return { success: true };
     }
     
@@ -113,8 +113,8 @@ export const signOut = async () => {
       console.error("Supabase signOut error:", error);
       // Even if the API call fails, we should clean up sessionStorage
       sessionStorage.removeItem("currentUserId");
-      localStorage.removeItem("userName");
-      localStorage.removeItem("userEmail");
+      sessionStorage.removeItem("userName");
+      sessionStorage.removeItem("userEmail");
       throw error;
     }
     
@@ -122,9 +122,9 @@ export const signOut = async () => {
     // We keep the user-specific localStorage data for future use
     sessionStorage.removeItem("currentUserId");
     
-    // Clear the generic non-prefixed user data
-    localStorage.removeItem("userName");
-    localStorage.removeItem("userEmail");
+    // Clear the session-specific non-prefixed user data
+    sessionStorage.removeItem("userName");
+    sessionStorage.removeItem("userEmail");
     
     // Emit event for auth status change
     emitEvent(EventTypes.AUTH_STATUS_CHANGED, { status: 'signedOut' });
@@ -132,10 +132,10 @@ export const signOut = async () => {
     return { success: true };
   } catch (error) {
     console.error("Error during signOut:", error);
-    // Even after errors, ensure we clean up local storage
+    // Even after errors, ensure we clean up sessionStorage
     sessionStorage.removeItem("currentUserId");
-    localStorage.removeItem("userName");
-    localStorage.removeItem("userEmail");
+    sessionStorage.removeItem("userName");
+    sessionStorage.removeItem("userEmail");
     
     // Emit event for auth status change
     emitEvent(EventTypes.AUTH_STATUS_CHANGED, { status: 'signedOut' });
@@ -156,10 +156,10 @@ export const getSession = async () => {
     // Update sessionStorage which is specific to this browser tab/window
     sessionStorage.setItem("currentUserId", data.session.user.id);
     
-    // Update the current generic user data
+    // Update the current session-specific user data
     const userName = data.session.user.user_metadata?.name;
     if (userName) {
-      localStorage.setItem("userName", userName);
+      sessionStorage.setItem("userName", userName);
       // Also ensure we have the user-specific data saved
       localStorage.setItem(getUserSpecificKey(data.session.user.id, "userName"), userName);
     }
@@ -167,15 +167,15 @@ export const getSession = async () => {
     // Get user email if available
     const email = data.session.user.email;
     if (email) {
-      localStorage.setItem("userEmail", email);
+      sessionStorage.setItem("userEmail", email);
       localStorage.setItem(getUserSpecificKey(data.session.user.id, "userEmail"), email);
     }
     
     return data.session;
   } else {
     sessionStorage.removeItem("currentUserId");
-    localStorage.removeItem("userName");
-    localStorage.removeItem("userEmail");
+    sessionStorage.removeItem("userName");
+    sessionStorage.removeItem("userEmail");
     return null;
   }
 };

@@ -45,7 +45,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // Update userName for this session/tab
           const userName = data.session.user.user_metadata?.name;
           if (userName) {
-            localStorage.setItem("userName", userName);
+            sessionStorage.setItem("userName", userName);
           }
           
         } else {
@@ -86,7 +86,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Update userName for this session/tab
         const userName = session.user.user_metadata?.name;
         if (userName) {
-          localStorage.setItem("userName", userName);
+          sessionStorage.setItem("userName", userName);
         }
         
         emitEvent(EventTypes.AUTH_STATUS_CHANGED, { status: 'signedIn' });
@@ -116,11 +116,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Update userName for this session/tab
         const userName = data.user.user_metadata?.name;
         if (userName) {
-          localStorage.setItem("userName", userName);
+          sessionStorage.setItem("userName", userName);
         }
         
         // Store email for profile
-        localStorage.setItem("userEmail", email);
+        sessionStorage.setItem("userEmail", email);
       }
       
       toast({
@@ -153,8 +153,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsAuthenticated(false);
         setUserId(null);
         sessionStorage.removeItem("currentUserId");
-        localStorage.removeItem("userName");
-        localStorage.removeItem("userEmail");
+        sessionStorage.removeItem("userName");
+        sessionStorage.removeItem("userEmail");
         
         toast({
           title: "Logged out successfully",
@@ -183,10 +183,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
       }
       
-      // Clean up storage and React state regardless of server response
+      // Clean up session storage and React state regardless of server response
       sessionStorage.removeItem("currentUserId");
-      localStorage.removeItem("userName");
-      localStorage.removeItem("userEmail");
+      sessionStorage.removeItem("userName");
+      sessionStorage.removeItem("userEmail");
       
       setIsAuthenticated(false);
       setUserId(null);
@@ -199,8 +199,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsAuthenticated(false);
       setUserId(null);
       sessionStorage.removeItem("currentUserId");
-      localStorage.removeItem("userName");
-      localStorage.removeItem("userEmail");
+      sessionStorage.removeItem("userName");
+      sessionStorage.removeItem("userEmail");
       
       toast({
         title: "Logout partially completed",

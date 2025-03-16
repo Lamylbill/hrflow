@@ -54,18 +54,8 @@ const Navbar = () => {
     // Listen for auth status change events
     window.addEventListener(EventTypes.AUTH_STATUS_CHANGED, handleAuthChange as EventListener);
     
-    // Also listen for storage changes that might affect auth status
-    const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === "currentUserId") {
-        setIsAuthenticated(!!event.newValue);
-      }
-    };
-    
-    window.addEventListener("storage", handleStorageChange);
-    
     return () => {
       window.removeEventListener(EventTypes.AUTH_STATUS_CHANGED, handleAuthChange as EventListener);
-      window.removeEventListener("storage", handleStorageChange);
     };
   }, []);
 
@@ -113,7 +103,7 @@ const Navbar = () => {
                   location.pathname === item.path || 
                   (item.path.startsWith("/#") && location.pathname === "/" && location.hash === item.path.substring(1))
                     ? "text-primary"
-                    : "text-foreground/80 dark:text-foreground/70"
+                    : "text-foreground/80 dark:text-white dark:text-opacity-80"
                 }`}
               >
                 {item.name}
@@ -152,7 +142,7 @@ const Navbar = () => {
 
         {/* Mobile menu button */}
         <button
-          className="md:hidden text-foreground p-1"
+          className="md:hidden text-foreground dark:text-white p-1"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
           aria-label={isMenuOpen ? "Close menu" : "Open menu"}
         >
@@ -172,7 +162,7 @@ const Navbar = () => {
                   location.pathname === item.path || 
                   (item.path.startsWith("/#") && location.pathname === "/" && location.hash === item.path.substring(1))
                     ? "bg-primary/10 text-primary"
-                    : "text-foreground/80 dark:text-foreground/70 hover:bg-secondary/50 hover:text-foreground"
+                    : "text-foreground/80 dark:text-white dark:text-opacity-80 hover:bg-secondary/50 hover:text-foreground"
                 }`}
               >
                 {item.name}
