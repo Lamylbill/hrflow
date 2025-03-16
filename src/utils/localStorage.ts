@@ -75,7 +75,8 @@ export const getEmployees = async (): Promise<Employee[]> => {
     // Try to get from Supabase first
     const { data, error } = await supabase
       .from('employees')
-      .select('*');
+      .select('*')
+      .eq('user_id', userId); // Add user_id filter to only get employees for the current user
       
     if (error) throw error;
     
@@ -123,7 +124,8 @@ export const addEmployee = async (employee: Omit<Employee, "id">): Promise<Emplo
         department: employee.department,
         phone: employee.phone,
         hire_date: new Date().toISOString().split('T')[0], // Today
-        status: 'active'
+        status: 'active',
+        user_id: userId // Add user_id to associate employee with current user
       })
       .select();
       
@@ -198,7 +200,8 @@ export const updateEmployee = async (employee: Employee): Promise<Employee> => {
         department: employee.department,
         phone: employee.phone
       })
-      .eq('id', employee.id);
+      .eq('id', employee.id)
+      .eq('user_id', userId); // Add user_id filter to ensure we only update the user's own employees
       
     if (error) throw error;
     
@@ -247,7 +250,8 @@ export const deleteEmployee = async (id: string): Promise<boolean> => {
     const { error } = await supabase
       .from('employees')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('user_id', userId); // Add user_id filter to ensure we only delete the user's own employees
       
     if (error) throw error;
     
