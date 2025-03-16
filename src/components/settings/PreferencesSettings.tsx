@@ -59,16 +59,16 @@ const PreferencesSettings = () => {
         </p>
       </div>
       
-      <Card>
-        <CardHeader>
+      <Card className="border dark:border-gray-700 dark:bg-gray-800">
+        <CardHeader className="dark:text-white">
           <CardTitle>Theme</CardTitle>
-          <CardDescription>
+          <CardDescription className="dark:text-gray-300">
             Choose between light and dark mode
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="dark-mode">Dark Mode</Label>
+            <Label htmlFor="dark-mode" className="dark:text-gray-200">Dark Mode</Label>
             <Switch 
               id="dark-mode" 
               checked={isDarkMode}
@@ -76,7 +76,7 @@ const PreferencesSettings = () => {
             />
           </div>
           <div className="flex items-center justify-between">
-            <Label htmlFor="compact-view">Compact View</Label>
+            <Label htmlFor="compact-view" className="dark:text-gray-200">Compact View</Label>
             <Switch 
               id="compact-view" 
               checked={compactView}
@@ -86,16 +86,16 @@ const PreferencesSettings = () => {
         </CardContent>
       </Card>
       
-      <Card>
-        <CardHeader>
+      <Card className="border dark:border-gray-700 dark:bg-gray-800">
+        <CardHeader className="dark:text-white">
           <CardTitle>Notifications</CardTitle>
-          <CardDescription>
+          <CardDescription className="dark:text-gray-300">
             Configure how you want to receive notifications
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="email-notifications">Email Notifications</Label>
+            <Label htmlFor="email-notifications" className="dark:text-gray-200">Email Notifications</Label>
             <Switch 
               id="email-notifications" 
               checked={emailNotifications}
@@ -103,7 +103,7 @@ const PreferencesSettings = () => {
             />
           </div>
           <div className="flex items-center justify-between">
-            <Label htmlFor="app-notifications">In-App Notifications</Label>
+            <Label htmlFor="app-notifications" className="dark:text-gray-200">In-App Notifications</Label>
             <Switch 
               id="app-notifications" 
               checked={appNotifications}

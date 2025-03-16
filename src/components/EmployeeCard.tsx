@@ -1,10 +1,11 @@
 
 import { useState } from "react";
-import { Mail, Phone } from "lucide-react";
+import { Mail, Phone, Pencil, Trash2 } from "lucide-react";
 import GlassCard from "./GlassCard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface EmployeeCardProps {
   employee: {
@@ -23,10 +24,11 @@ interface EmployeeCardProps {
 
 const EmployeeCard = ({ employee, onEdit, onDelete, onViewDetails }: EmployeeCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
-  const [showActionDialog, setShowActionDialog] = useState(false);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
 
-  const handleEdit = () => {
-    setShowActionDialog(false);
+  const handleEdit = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setShowDetailsDialog(false);
     if (onEdit) {
       onEdit(employee.id);
     } else {
@@ -37,8 +39,9 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onViewDetails }: EmployeeCar
     }
   };
 
-  const handleDelete = () => {
-    setShowActionDialog(false);
+  const handleDelete = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setShowDetailsDialog(false);
     if (onDelete) {
       onDelete(employee.id);
     } else {
@@ -51,28 +54,20 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onViewDetails }: EmployeeCar
   };
 
   const handleViewDetails = () => {
-    setShowActionDialog(false);
     if (onViewDetails) {
       onViewDetails(employee.id);
     } else {
-      toast({
-        title: "View Details",
-        description: `Viewing ${employee.name}'s details`,
-      });
+      setShowDetailsDialog(true);
     }
   };
   
-  const handleCardClick = () => {
-    setShowActionDialog(true);
-  };
-
   return (
     <>
       <GlassCard
         className="transition-all duration-300 cursor-pointer"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        onClick={handleCardClick}
+        onClick={handleViewDetails}
         hoverEffect
       >
         <div className="flex items-center">
@@ -117,50 +112,50 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onViewDetails }: EmployeeCar
         </div>
       </GlassCard>
 
-      <Dialog open={showActionDialog} onOpenChange={setShowActionDialog}>
-        <DialogContent className="sm:max-w-md">
+      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+        <DialogContent className="sm:max-w-md dark:bg-gray-800 dark:text-white">
           <DialogHeader>
-            <DialogTitle className="text-center mb-2">Employee Actions</DialogTitle>
-            <div className="flex items-center justify-center mb-4">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
-                {employee.imageUrl ? (
-                  <img
-                    src={employee.imageUrl}
-                    alt={employee.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-2xl font-medium text-primary">
-                    {employee.name.charAt(0)}
-                  </span>
-                )}
-              </div>
-            </div>
-            <h3 className="text-center text-xl font-medium">{employee.name}</h3>
-            <p className="text-center text-muted-foreground">{employee.position}</p>
+            <DialogTitle className="text-center mb-2 dark:text-white">Employee Details</DialogTitle>
           </DialogHeader>
           
-          <div className="flex flex-col space-y-3 mt-2">
+          <div className="flex flex-col items-center mb-4">
+            <Avatar className="h-24 w-24 mb-4">
+              <AvatarImage src={employee.imageUrl} alt={employee.name} />
+              <AvatarFallback className="bg-primary/10 text-primary text-2xl">
+                {employee.name.split(" ").map(n => n[0]).join("")}
+              </AvatarFallback>
+            </Avatar>
+            <h3 className="text-xl font-bold dark:text-white">{employee.name}</h3>
+            <p className="text-sm text-muted-foreground dark:text-gray-300">{employee.position} • {employee.department}</p>
+          </div>
+          
+          <div className="space-y-3">
+            <div className="flex items-center space-x-3">
+              <Mail className="h-5 w-5 text-muted-foreground" />
+              <span className="dark:text-gray-200">{employee.email}</span>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Phone className="h-5 w-5 text-muted-foreground" />
+              <span className="dark:text-gray-200">{employee.phone}</span>
+            </div>
+          </div>
+          
+          <div className="flex space-x-3 mt-4">
             <Button 
-              variant="outline" 
-              className="w-full justify-start" 
-              onClick={handleViewDetails}
+              className="flex-1 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600" 
+              variant="outline"
+              onClick={(e) => handleEdit(e)}
             >
-              View Details
+              <Pencil className="mr-2 h-4 w-4" />
+              Edit
             </Button>
             <Button 
-              variant="outline" 
-              className="w-full justify-start" 
-              onClick={handleEdit}
+              className="flex-1" 
+              variant="destructive"
+              onClick={(e) => handleDelete(e)}
             >
-              Edit Employee
-            </Button>
-            <Button 
-              variant="destructive" 
-              className="w-full justify-start" 
-              onClick={handleDelete}
-            >
-              Delete Employee
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
             </Button>
           </div>
         </DialogContent>

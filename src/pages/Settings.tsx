@@ -30,9 +30,9 @@ const Settings = () => {
 
       <main className="flex-grow pt-24 pb-12">
         <div className="hr-container">
-          <h1 className="text-3xl font-bold mb-6">Account Settings</h1>
+          <h1 className="text-3xl font-bold mb-6 dark:text-white">Account Settings</h1>
 
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
             <Tabs 
               value={activeTab} 
               onValueChange={(value) => {
@@ -41,23 +41,23 @@ const Settings = () => {
               }}
               className="w-full"
             >
-              <TabsList className="w-full border-b rounded-none bg-transparent p-0 h-auto">
+              <TabsList className="w-full border-b rounded-none bg-transparent p-0 h-auto dark:border-gray-700">
                 <div className="flex">
                   <TabsTrigger 
                     value="profile" 
-                    className="py-3 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-none data-[state=active]:bg-transparent"
+                    className="py-3 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-none data-[state=active]:bg-transparent dark:text-gray-300 dark:data-[state=active]:text-white"
                   >
                     Profile
                   </TabsTrigger>
                   <TabsTrigger 
                     value="password" 
-                    className="py-3 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-none data-[state=active]:bg-transparent"
+                    className="py-3 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-none data-[state=active]:bg-transparent dark:text-gray-300 dark:data-[state=active]:text-white"
                   >
                     Password
                   </TabsTrigger>
                   <TabsTrigger 
                     value="preferences" 
-                    className="py-3 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-none data-[state=active]:bg-transparent"
+                    className="py-3 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-none data-[state=active]:bg-transparent dark:text-gray-300 dark:data-[state=active]:text-white"
                   >
                     Preferences
                   </TabsTrigger>

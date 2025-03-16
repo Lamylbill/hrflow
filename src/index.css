@@ -93,6 +93,11 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
   }
+  
+  /* Ensure text is always visible in dark mode */
+  .dark input, .dark textarea, .dark select {
+    @apply text-foreground;
+  }
 }
 
 @layer components {
@@ -122,6 +127,16 @@
   
   .section-transition {
     @apply animate-slide-up;
+  }
+  
+  /* Dark mode specific overrides */
+  .dark .nav-link {
+    @apply text-gray-200 hover:text-white;
+  }
+  
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    @apply text-gray-500;
   }
 }
 
