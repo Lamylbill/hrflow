@@ -2,8 +2,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { getSession, signOut } from "@/utils/auth";
-import { initializeForNewUser } from "@/utils/initializeForNewUser";
 import { useToast } from "@/hooks/use-toast";
 import { EventTypes, emitEvent } from "@/utils/eventBus";
 
@@ -23,6 +21,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [userId, setUserId] = useState<string | null>(
     localStorage.getItem("currentUserId")
   );
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -32,25 +31,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Check if user is logged in on initial load
     const checkAuthStatus = async () => {
       try {
-        const session = await getSession();
+        const { data } = await supabase.auth.getSession();
         
         if (!isMounted) return;
         
-        const isUserAuthenticated = !!session;
+        const isUserAuthenticated = !!data.session;
         setIsAuthenticated(isUserAuthenticated);
         
-        // Store and initialize user data if user is authenticated
-        if (session?.user) {
-          setUserId(session.user.id);
-          console.log("Setting userId in AuthContext:", session.user.id);
-          localStorage.setItem("currentUserId", session.user.id);
+        // Store user data if user is authenticated
+        if (data.session?.user) {
+          setUserId(data.session.user.id);
+          localStorage.setItem("currentUserId", data.session.user.id);
           localStorage.setItem("isAuthenticated", "true");
-          await initializeForNewUser(session.user.id);
         } else {
           setUserId(null);
           localStorage.removeItem("currentUserId");
           localStorage.removeItem("isAuthenticated");
         }
+        setIsLoading(false);
       } catch (error) {
         console.error("Error checking auth status:", error);
         if (isMounted) {
@@ -58,6 +56,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUserId(null);
           localStorage.removeItem("currentUserId");
           localStorage.removeItem("isAuthenticated");
+          setIsLoading(false);
         }
       }
     };
@@ -69,26 +68,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!isMounted) return;
       
       console.log("Auth state change in AuthContext:", event);
-      const isUserAuthenticated = !!session;
-      setIsAuthenticated(isUserAuthenticated);
       
-      if (session?.user) {
-        setUserId(session.user.id);
-        console.log("Auth state change - userId:", session.user.id);
-        localStorage.setItem("currentUserId", session.user.id);
-        localStorage.setItem("isAuthenticated", "true");
-        // For login events, reinitialize user data
-        if (event === 'SIGNED_IN') {
-          await initializeForNewUser(session.user.id);
-          emitEvent(EventTypes.AUTH_STATUS_CHANGED, { status: 'signedIn' });
-        }
-      } else {
+      if (event === 'SIGNED_OUT') {
+        setIsAuthenticated(false);
         setUserId(null);
         localStorage.removeItem("currentUserId");
         localStorage.removeItem("isAuthenticated");
-        if (event === 'SIGNED_OUT') {
-          emitEvent(EventTypes.AUTH_STATUS_CHANGED, { status: 'signedOut' });
-        }
+        emitEvent(EventTypes.AUTH_STATUS_CHANGED, { status: 'signedOut' });
+        navigate("/login", { replace: true });
+      } else if (event === 'SIGNED_IN' && session?.user) {
+        setIsAuthenticated(true);
+        setUserId(session.user.id);
+        localStorage.setItem("currentUserId", session.user.id);
+        localStorage.setItem("isAuthenticated", "true");
+        emitEvent(EventTypes.AUTH_STATUS_CHANGED, { status: 'signedIn' });
       }
     });
     
@@ -96,7 +89,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isMounted = false;
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
@@ -110,12 +103,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsAuthenticated(true);
       if (data.user) {
         setUserId(data.user.id);
-        console.log("Login function - setting userId:", data.user.id);
         localStorage.setItem("currentUserId", data.user.id);
         localStorage.setItem("isAuthenticated", "true");
-        // Initialize user data after successful login
-        await initializeForNewUser(data.user.id);
-        emitEvent(EventTypes.AUTH_STATUS_CHANGED, { status: 'signedIn' });
       }
       
       toast({
@@ -139,20 +128,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async (): Promise<void> => {
     try {
-      console.log("Logout initiated");
-      await signOut();
-      
-      setIsAuthenticated(false);
-      setUserId(null);
+      await supabase.auth.signOut();
       
       // Clear all localStorage data on logout
       localStorage.clear();
       
-      emitEvent(EventTypes.AUTH_STATUS_CHANGED, { status: 'signedOut' });
+      setIsAuthenticated(false);
+      setUserId(null);
       
-      console.log("Logout completed successfully");
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of your account",
+      });
       
-      // Navigation is now handled at the NavbarLoggedIn component
+      navigate("/login", { replace: true });
     } catch (error) {
       console.error("Logout error:", error);
       
@@ -166,7 +155,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider value={{ isAuthenticated, userId, login, logout }}>
-      {children}
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center min-h-screen">
+          <div className="h-10 w-10 border-4 border-t-transparent border-primary rounded-full animate-spin mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 };

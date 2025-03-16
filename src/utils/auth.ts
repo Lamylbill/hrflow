@@ -46,9 +46,6 @@ export const signIn = async (email: string, password: string) => {
     localStorage.setItem("currentUserId", data.user.id);
     localStorage.setItem("isAuthenticated", "true");
     
-    // This ensures we're not showing pre-recorded data by aggressively clearing and initializing
-    await initializeForNewUser(data.user.id);
-    
     // Store user name for display
     const userName = data.user.user_metadata?.name;
     if (userName) {
@@ -61,8 +58,6 @@ export const signIn = async (email: string, password: string) => {
 
 // Sign out the current user
 export const signOut = async () => {
-  console.log("signOut function called");
-  
   try {
     const { error } = await supabase.auth.signOut();
     
@@ -72,7 +67,6 @@ export const signOut = async () => {
     }
     
     // Clear ALL localStorage data on logout to prevent data leaking
-    console.log("Clearing localStorage on logout");
     localStorage.clear();
     
     return { success: true };

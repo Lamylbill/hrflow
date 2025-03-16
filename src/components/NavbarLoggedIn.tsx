@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import NotificationsDropdown from "@/components/NotificationsDropdown";
@@ -24,16 +25,13 @@ import {
   X,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useToast } from "@/hooks/use-toast";
 
 const NavbarLoggedIn = () => {
   const { logout } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const { toast } = useToast();
 
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -46,18 +44,8 @@ const NavbarLoggedIn = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      toast({
-        title: "Logged out successfully",
-        description: "You have been logged out of your account",
-      });
-      navigate("/login", { replace: true });
     } catch (error) {
       console.error("Logout error:", error);
-      toast({
-        title: "Logout failed",
-        description: "There was a problem logging out. Please try again.",
-        variant: "destructive",
-      });
     }
   };
 
@@ -139,9 +127,11 @@ const NavbarLoggedIn = () => {
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Admin User</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate("/settings")}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
+                <DropdownMenuItem asChild>
+                  <Link to="/settings">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
