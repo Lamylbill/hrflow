@@ -21,23 +21,34 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 initializeApp();
 
 function App() {
-  // Global auto-refresh mechanism
+  // Global auto-refresh mechanism - only for serious failures
   useEffect(() => {
     // Track if page is fully loaded
     let pageLoaded = false;
     
-    // Set a timer to check if page has loaded within 5 seconds
+    // Set a longer timer (10 seconds) to check if page has loaded
     const loadTimeout = setTimeout(() => {
       if (!pageLoaded) {
-        console.log("Page failed to load completely, triggering refresh");
+        console.log("Page failed to load completely after extended wait, triggering refresh");
+        // Store current route before refresh to return to it
+        const currentPath = window.location.pathname;
+        localStorage.setItem("lastRoute", currentPath);
         window.location.reload();
       }
-    }, 5000);
+    }, 10000); // Increased from 5000 to 10000ms
     
     // Mark as loaded when window load event fires
     window.addEventListener('load', () => {
       pageLoaded = true;
       clearTimeout(loadTimeout);
+      
+      // Check if we're returning from a refresh and need to navigate
+      const lastRoute = localStorage.getItem("lastRoute");
+      if (lastRoute && window.location.pathname !== lastRoute) {
+        console.log("Restoring previous route:", lastRoute);
+        window.history.pushState(null, "", lastRoute);
+        localStorage.removeItem("lastRoute");
+      }
     });
     
     return () => {

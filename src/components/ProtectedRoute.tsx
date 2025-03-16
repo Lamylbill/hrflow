@@ -11,6 +11,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isLoading, setIsLoading] = useState(true);
+  const [authCheckAttempts, setAuthCheckAttempts] = useState(0);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -28,13 +29,25 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         
         if (!isAuthenticated && !localAuth && location.pathname !== "/login") {
           console.log("Not authenticated, redirecting to login");
-          navigate("/login");
+          navigate("/login", { replace: true });
+        } else {
+          // Successfully authenticated or on login page
+          setIsLoading(false);
         }
       } catch (error) {
         console.error("Auth check error:", error);
-        navigate("/login");
-      } finally {
-        setIsLoading(false);
+        
+        // Retry logic for auth check failures
+        if (authCheckAttempts < 3) {
+          console.log(`Auth check attempt ${authCheckAttempts + 1} failed, retrying...`);
+          setAuthCheckAttempts(prev => prev + 1);
+          // Wait a moment before retrying
+          setTimeout(checkAuth, 1000);
+        } else {
+          console.log("Auth check failed multiple times, redirecting to login");
+          navigate("/login", { replace: true });
+          setIsLoading(false);
+        }
       }
     };
 
@@ -43,7 +56,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     // Set up listener for auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT' && location.pathname !== "/login") {
-        navigate("/login");
+        navigate("/login", { replace: true });
       } else if (session?.user?.id) {
         localStorage.setItem("currentUserId", session.user.id);
       }
@@ -52,7 +65,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [navigate, location]);
+  }, [navigate, location, authCheckAttempts]);
 
   if (isLoading) {
     return (

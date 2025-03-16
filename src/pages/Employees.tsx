@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { PlusCircle, Search, Upload, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,33 +25,58 @@ const Employees = () => {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [isViewingDetails, setIsViewingDetails] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [pageLoaded, setPageLoaded] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadAttempts, setLoadAttempts] = useState(0);
 
-  // Mark page as loaded
+  // Improved page load detection
   useEffect(() => {
-    setPageLoaded(true);
-    
-    // If page didn't load properly, reload after 3 seconds
-    const timer = setTimeout(() => {
-      if (!pageLoaded) {
+    const loadTimeout = setTimeout(() => {
+      if (isLoading && loadAttempts < 3) {
+        console.log(`Employees page load attempt ${loadAttempts + 1} failed, retrying`);
+        setLoadAttempts(prev => prev + 1);
+        fetchEmployees();
+      } else if (isLoading && loadAttempts >= 3) {
+        console.log("Multiple load attempts failed, forcing full page refresh");
         window.location.reload();
       }
-    }, 3000);
-    
-    return () => clearTimeout(timer);
-  }, []);
+    }, 3000); // Check every 3 seconds
 
-  // Fetch employees on mount
+    return () => clearTimeout(loadTimeout);
+  }, [isLoading, loadAttempts]);
+
+  // Fetch employees on mount and when needed
   useEffect(() => {
     fetchEmployees();
+    
+    // Set up periodic refresh for employee data
+    const refreshInterval = setInterval(() => {
+      fetchEmployees(false); // Silent refresh
+    }, 5000);
+    
+    return () => clearInterval(refreshInterval);
   }, []);
 
-  const fetchEmployees = async () => {
+  const fetchEmployees = async (showLoader = true) => {
     try {
+      if (showLoader) {
+        setIsLoading(true);
+      }
+      
       const data = await getEmployees();
-      setEmployees(data);
-      setFilteredEmployees(data);
+      
+      // Only update if we got actual data
+      if (Array.isArray(data)) {
+        setEmployees(data);
+        setFilteredEmployees(data);
+        setIsLoading(false);
+      } else {
+        console.error("Invalid employee data format:", data);
+        toast({
+          title: "Data Error",
+          description: "Received invalid employee data format. Try refreshing the page.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error("Error fetching employees:", error);
       toast({
@@ -159,10 +184,18 @@ const Employees = () => {
     await fetchEmployees();
     
     // Navigate to dashboard and back to ensure dashboard gets updated with new employee count
-    navigate("/dashboard", { replace: true });
-    setTimeout(() => {
-      navigate("/employees", { replace: true });
-    }, 100);
+    try {
+      // Use a more reliable approach to refresh the dashboard data without navigation
+      const event = new CustomEvent('employee-data-changed');
+      window.dispatchEvent(event);
+      
+      toast({
+        title: "Success",
+        description: "Employee added successfully. Dashboard has been updated.",
+      });
+    } catch (error) {
+      console.error("Error handling employee addition:", error);
+    }
   };
 
   const downloadEmployeeTemplate = () => {
@@ -186,78 +219,73 @@ const Employees = () => {
     });
   };
 
-  // Safe navigation function
-  const navigateSafely = (path: string) => {
-    navigate(path);
-    
-    // Fallback mechanism if page doesn't load within 2 seconds
-    setTimeout(() => {
-      if (window.location.pathname !== path) {
-        console.log("Page navigation timeout, forcing reload");
-        window.location.href = path;
-      }
-    }, 2000);
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <NavbarLoggedIn />
       <main className="container max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 pt-24">
-        <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0 mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">Employees</h1>
-            <p className="text-muted-foreground">
-              Manage your company's employees
-            </p>
-          </div>
-          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search employees..."
-                className="pl-8 w-full md:w-[300px]"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <div className="flex space-x-2">
-              <Button variant="outline" onClick={downloadEmployeeTemplate}>
-                <Download className="mr-2 h-4 w-4" />
-                Template
-              </Button>
-              <Button variant="outline" onClick={() => setIsMassUploading(true)}>
-                <Upload className="mr-2 h-4 w-4" />
-                Mass Upload
-              </Button>
-              <Button onClick={() => setIsAddingEmployee(true)}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add Employee
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {filteredEmployees.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <p className="text-muted-foreground mb-4">No employees found</p>
-            <Button onClick={() => setIsAddingEmployee(true)}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add your first employee
-            </Button>
+        {isLoading ? (
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="h-10 w-10 border-4 border-t-transparent border-primary rounded-full animate-spin"></div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredEmployees.map((employee) => (
-              <EmployeeCard
-                key={employee.id}
-                employee={employee}
-                onDelete={handleDeleteEmployee}
-                onEdit={handleEdit}
-                onViewDetails={handleViewDetails}
-              />
-            ))}
-          </div>
+          <>
+            <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0 mb-6">
+              <div>
+                <h1 className="text-2xl font-bold">Employees</h1>
+                <p className="text-muted-foreground">
+                  Manage your company's employees
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="search"
+                    placeholder="Search employees..."
+                    className="pl-8 w-full md:w-[300px]"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                <div className="flex space-x-2">
+                  <Button variant="outline" onClick={downloadEmployeeTemplate}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Template
+                  </Button>
+                  <Button variant="outline" onClick={() => setIsMassUploading(true)}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Mass Upload
+                  </Button>
+                  <Button onClick={() => setIsAddingEmployee(true)}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Employee
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {filteredEmployees.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <p className="text-muted-foreground mb-4">No employees found</p>
+                <Button onClick={() => setIsAddingEmployee(true)}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add your first employee
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredEmployees.map((employee) => (
+                  <EmployeeCard
+                    key={employee.id}
+                    employee={employee}
+                    onDelete={handleDeleteEmployee}
+                    onEdit={handleEdit}
+                    onViewDetails={handleViewDetails}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </main>
       
