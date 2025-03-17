@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Users, UserPlus, Mail, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,7 @@ import { getEmployees } from "@/utils/localStorage";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { EmployeeRecord, asEmployeeRecords } from "@/types/database";
 
 const EmployeesTabContent = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -21,8 +23,8 @@ const EmployeesTabContent = () => {
       // Always try to get employees from Supabase first
       if (userId) {
         console.log("EmployeesTabContent: Fetching from Supabase for user:", userId);
-        const { data: supabaseEmployees, error } = await supabase
-          .from('employees')
+        const { data: supabaseEmployees, error } = await (supabase
+          .from('employees') as any)
           .select('*')
           .eq('user_id', userId)
           .order('created_at', { ascending: false });
@@ -44,7 +46,9 @@ const EmployeesTabContent = () => {
           console.log("EmployeesTabContent: Successfully loaded from Supabase:", supabaseEmployees.length);
           
           // Map Supabase data to our Employee type
-          const formattedEmployees: Employee[] = supabaseEmployees.map(emp => ({
+          const typedEmployees = asEmployeeRecords(supabaseEmployees);
+          
+          const formattedEmployees: Employee[] = typedEmployees.map(emp => ({
             id: emp.id,
             name: `${emp.first_name} ${emp.last_name}`,
             position: emp.position,

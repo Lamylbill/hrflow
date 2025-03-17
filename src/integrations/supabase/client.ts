@@ -43,8 +43,9 @@ const enableRealtimeForTables = async () => {
     
     // Check connectivity by querying a known table
     try {
-      const { error } = await supabase
-        .from('employees')
+      // Use type casting to avoid TypeScript errors
+      const { error } = await (supabase
+        .from('employees') as any)
         .select('id')
         .limit(1);
       

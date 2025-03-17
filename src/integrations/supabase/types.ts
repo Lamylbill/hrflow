@@ -9,7 +9,120 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      employees: {
+        Row: {
+          address: string | null
+          bank_account_details: string | null
+          bonus_eligible: boolean | null
+          created_at: string | null
+          date_of_birth: string | null
+          dental_vision_coverage: string | null
+          department: string
+          email: string
+          emergency_contact_email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          emergency_contact_relationship: string | null
+          employee_id: string | null
+          employment_type: string | null
+          first_name: string
+          gender: string | null
+          health_insurance: string | null
+          hire_date: string
+          id: string
+          last_name: string
+          manager_name: string | null
+          nationality: string | null
+          overtime_eligible: boolean | null
+          pay_frequency: string | null
+          phone: string | null
+          position: string
+          retirement_plan: string | null
+          salary: number | null
+          secondary_emergency_contact: string | null
+          status: string | null
+          tax_id: string | null
+          updated_at: string | null
+          user_id: string | null
+          work_location: string | null
+          work_schedule: string | null
+        }
+        Insert: {
+          address?: string | null
+          bank_account_details?: string | null
+          bonus_eligible?: boolean | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          dental_vision_coverage?: string | null
+          department: string
+          email: string
+          emergency_contact_email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
+          employee_id?: string | null
+          employment_type?: string | null
+          first_name: string
+          gender?: string | null
+          health_insurance?: string | null
+          hire_date: string
+          id?: string
+          last_name: string
+          manager_name?: string | null
+          nationality?: string | null
+          overtime_eligible?: boolean | null
+          pay_frequency?: string | null
+          phone?: string | null
+          position: string
+          retirement_plan?: string | null
+          salary?: number | null
+          secondary_emergency_contact?: string | null
+          status?: string | null
+          tax_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          work_location?: string | null
+          work_schedule?: string | null
+        }
+        Update: {
+          address?: string | null
+          bank_account_details?: string | null
+          bonus_eligible?: boolean | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          dental_vision_coverage?: string | null
+          department?: string
+          email?: string
+          emergency_contact_email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
+          employee_id?: string | null
+          employment_type?: string | null
+          first_name?: string
+          gender?: string | null
+          health_insurance?: string | null
+          hire_date?: string
+          id?: string
+          last_name?: string
+          manager_name?: string | null
+          nationality?: string | null
+          overtime_eligible?: boolean | null
+          pay_frequency?: string | null
+          phone?: string | null
+          position?: string
+          retirement_plan?: string | null
+          salary?: number | null
+          secondary_emergency_contact?: string | null
+          status?: string | null
+          tax_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          work_location?: string | null
+          work_schedule?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

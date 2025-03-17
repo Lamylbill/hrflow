@@ -4,6 +4,7 @@ import { EventTypes, onEvent } from '@/utils/eventBus';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { EmployeeRecord } from '@/types/database';
 
 interface DashboardEmployeeListenerProps {
   onEmployeeChange: () => void;
@@ -46,7 +47,10 @@ const DashboardEmployeeListener = ({ onEmployeeChange }: DashboardEmployeeListen
           
           // Show different toast messages based on the event type
           const eventType = payload.eventType;
-          const employeeData = eventType === 'DELETE' ? payload.old_record : payload.new_record;
+          const employeeData = eventType === 'DELETE' 
+            ? payload.old_record as EmployeeRecord
+            : payload.new_record as EmployeeRecord;
+            
           const employeeName = employeeData ? 
             `${employeeData.first_name} ${employeeData.last_name}` : 
             'Employee';
