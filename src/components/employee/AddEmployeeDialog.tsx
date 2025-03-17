@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -9,6 +8,8 @@ import { addEmployee } from "@/utils/localStorage";
 import { toast } from "@/hooks/use-toast";
 import { Employee } from "@/types/employee";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { EventTypes, emitEvent } from "@/utils/eventBus";
 
 interface AddEmployeeDialogProps {
   open: boolean;
@@ -70,7 +71,7 @@ const AddEmployeeDialog = ({ open, onClose, onEmployeeAdded }: AddEmployeeDialog
     }
     
     try {
-      // Add employee to localStorage
+      // Add employee to database (Supabase with localStorage fallback)
       await addEmployee(formData as Omit<Employee, "id">);
       
       // Show success message
@@ -102,6 +103,12 @@ const AddEmployeeDialog = ({ open, onClose, onEmployeeAdded }: AddEmployeeDialog
         emergencyContactPhone: "",
         emergencyContactRelationship: "",
         emergencyContactEmail: "",
+      });
+      
+      // Emit event to notify components that employee data changed
+      emitEvent(EventTypes.EMPLOYEE_DATA_CHANGED, { 
+        action: 'add', 
+        employeeName: formData.name 
       });
       
       // Call the callback to refresh the employee list
