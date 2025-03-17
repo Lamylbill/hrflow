@@ -1,11 +1,21 @@
 
 import { useState } from "react";
-import { Mail, Phone, Pencil, Trash2 } from "lucide-react";
+import { Mail, Phone, Pencil, Trash2, AlertTriangle } from "lucide-react";
 import GlassCard from "./GlassCard";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import EmployeeDetailsDialog from "./employee/EmployeeDetailsDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface EmployeeCardProps {
   employee: {
@@ -25,6 +35,7 @@ interface EmployeeCardProps {
 const EmployeeCard = ({ employee, onEdit, onDelete, onViewDetails }: EmployeeCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleEdit = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -39,9 +50,14 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onViewDetails }: EmployeeCar
     }
   };
 
-  const handleDelete = (e?: React.MouseEvent) => {
+  const handleDeleteClick = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = () => {
     setShowDetailsDialog(false);
+    setShowDeleteConfirm(false);
     if (onDelete) {
       onDelete(employee.id);
     } else {
@@ -127,7 +143,7 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onViewDetails }: EmployeeCar
             variant="ghost"
             size="sm"
             className="h-8 w-8 p-0 bg-background/50 backdrop-blur-sm hover:bg-destructive hover:text-destructive-foreground"
-            onClick={(e) => handleDelete(e)}
+            onClick={(e) => handleDeleteClick(e)}
           >
             <Trash2 className="h-4 w-4" />
             <span className="sr-only">Delete</span>
@@ -144,6 +160,31 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onViewDetails }: EmployeeCar
           onDelete={onDelete}
         />
       )}
+      
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center">
+              <AlertTriangle className="h-5 w-5 mr-2 text-amber-500" />
+              Confirm Employee Deletion
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete {employee.name}'s 
+              record and remove all associated data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmDelete} 
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Yes, delete employee
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };

@@ -15,11 +15,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Download, Eye, CheckCircle } from "lucide-react";
+import { MoreHorizontal, Download, Eye, CheckCircle, AlertTriangle } from "lucide-react";
 import { PayrollData } from "@/types/payroll";
 import { formatCurrency } from "@/utils/formatters";
 import { updatePayrollStatus } from "@/utils/localStorage";
 import { toast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface PayrollTableProps {
   payrollData: PayrollData[];
@@ -28,6 +38,7 @@ interface PayrollTableProps {
 
 const PayrollTable = ({ payrollData, onPayrollUpdate }: PayrollTableProps) => {
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [payrollToMarkPaid, setPayrollToMarkPaid] = useState<PayrollData | null>(null);
 
   const handleMarkAsPaid = async (id: string) => {
     setProcessingId(id);
@@ -51,6 +62,17 @@ const PayrollTable = ({ payrollData, onPayrollUpdate }: PayrollTableProps) => {
       });
     } finally {
       setProcessingId(null);
+    }
+  };
+
+  const handleConfirmMarkAsPaid = (payroll: PayrollData) => {
+    setPayrollToMarkPaid(payroll);
+  };
+
+  const handleConfirmedMarkAsPaid = () => {
+    if (payrollToMarkPaid) {
+      handleMarkAsPaid(payrollToMarkPaid.id);
+      setPayrollToMarkPaid(null);
     }
   };
 
@@ -116,7 +138,11 @@ const PayrollTable = ({ payrollData, onPayrollUpdate }: PayrollTableProps) => {
                       Download
                     </DropdownMenuItem>
                     {(payroll.status === "pending" || payroll.status === "processing") && (
-                      <DropdownMenuItem onClick={() => handleMarkAsPaid(payroll.id)} disabled={processingId === payroll.id}>
+                      <DropdownMenuItem 
+                        onClick={() => handleConfirmMarkAsPaid(payroll)} 
+                        disabled={processingId === payroll.id}
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
                         Mark as Paid
                       </DropdownMenuItem>
                     )}
@@ -132,6 +158,28 @@ const PayrollTable = ({ payrollData, onPayrollUpdate }: PayrollTableProps) => {
           No payroll data found.
         </div>
       )}
+
+      {/* Mark as Paid confirmation dialog */}
+      <AlertDialog open={!!payrollToMarkPaid} onOpenChange={() => setPayrollToMarkPaid(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center">
+              <AlertTriangle className="h-5 w-5 mr-2 text-amber-500" />
+              Confirm Payment Action
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to mark this payroll as paid? This action will register a payment for 
+              {payrollToMarkPaid ? ` ${payrollToMarkPaid.employeeName}` : ''} with today's date.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmedMarkAsPaid}>
+              Confirm Payment
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

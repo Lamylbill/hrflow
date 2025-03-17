@@ -8,6 +8,11 @@ interface CompensationTabProps {
 }
 
 const CompensationTab = ({ employee }: CompensationTabProps) => {
+  // Format salary with currency symbol and commas
+  const formattedSalary = employee.salary 
+    ? `$${employee.salary.toLocaleString()}`
+    : 'Not provided';
+
   return (
     <div className="space-y-4">
       <h4 className="text-sm font-semibold text-muted-foreground mb-2">Compensation & Payroll</h4>
@@ -17,7 +22,7 @@ const CompensationTab = ({ employee }: CompensationTabProps) => {
         <div>
           <p className="text-sm font-medium">Salary/Rate</p>
           <p className="text-sm text-muted-foreground">
-            {employee.salary ? `$${employee.salary.toLocaleString()}` : 'Not provided'}
+            {formattedSalary}
           </p>
         </div>
       </div>
