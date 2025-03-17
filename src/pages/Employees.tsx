@@ -1,15 +1,14 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { PlusCircle, Search, Upload, Download } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Employee } from "@/types/employee";
 import NavbarLoggedIn from "@/components/NavbarLoggedIn";
 import AddEmployeeDialog from "@/components/employee/AddEmployeeDialog";
-import EmployeeCard from "@/components/EmployeeCard";
 import EmployeeDetailsDialog from "@/components/employee/EmployeeDetailsDialog";
 import EditEmployeeDialog from "@/components/employee/EditEmployeeDialog";
 import MassUploadDialog from "@/components/employee/MassUploadDialog";
+import EmployeeList from "@/components/employee/EmployeeList";
+import EmployeeActions from "@/components/employee/EmployeeActions";
 import { getEmployees, addEmployee, deleteEmployee, updateEmployee } from "@/utils/localStorage";
 import { EventTypes, emitEvent } from "@/utils/eventBus";
 import { toast } from "@/hooks/use-toast";
@@ -17,8 +16,6 @@ import { toast } from "@/hooks/use-toast";
 const Employees = () => {
   const navigate = useNavigate();
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
   const [isAddingEmployee, setIsAddingEmployee] = useState(false);
   const [isMassUploading, setIsMassUploading] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
@@ -39,7 +36,6 @@ const Employees = () => {
       
       if (Array.isArray(data)) {
         setEmployees(data);
-        setFilteredEmployees(data);
       } else {
         console.error("Invalid employee data format:", data);
         toast({
@@ -59,24 +55,6 @@ const Employees = () => {
       setIsLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredEmployees(employees);
-      return;
-    }
-
-    const query = searchQuery.toLowerCase();
-    const filtered = employees.filter(
-      (employee) =>
-        employee.name.toLowerCase().includes(query) ||
-        employee.position.toLowerCase().includes(query) ||
-        employee.department.toLowerCase().includes(query) ||
-        employee.email.toLowerCase().includes(query)
-    );
-
-    setFilteredEmployees(filtered);
-  }, [searchQuery, employees]);
 
   const handleAddEmployee = async (employee: Omit<Employee, "id">) => {
     try {
@@ -180,95 +158,27 @@ const Employees = () => {
     });
   };
 
-  const downloadEmployeeTemplate = () => {
-    const csvContent = `Name,Position,Department,Email,Phone,EmployeeID,HireDate,Gender,DateOfBirth,Nationality,Address,EmploymentType,WorkLocation,ManagerName,Status,Salary,PayFrequency,OvertimeEligible,BonusEligible,TaxID,BankAccountDetails,EmergencyContactName,EmergencyContactRelationship,EmergencyContactPhone,EmergencyContactEmail,SecondaryEmergencyContact,HealthInsurance,DentalVisionCoverage,RetirementPlan,PTOBalance,WorkSchedule
-John Doe,Manager,Engineering,john.doe@example.com,+1-555-123-4567,EMP001,2023-01-15,Male,1980-05-10,American,123 Main St,Full-time,Headquarters,Jane Smith,Active,75000,Monthly,true,true,TAX123456,Bank Account XXXX1234,Mary Doe,Spouse,+1-555-987-6543,mary.doe@example.com,Jack Doe,Premium Health Plan,Dental & Vision Basic,401k 5% match,120,Fixed
-Jane Smith,Developer,Engineering,jane.smith@example.com,+1-555-987-6543,EMP002,2023-02-01,Female,1985-08-22,Canadian,456 Oak Ave,Full-time,Remote,John Doe,Active,65000,Monthly,false,true,TAX789012,Bank Account XXXX5678,Jack Smith,Spouse,+1-555-123-7890,jack.smith@example.com,Sarah Smith,Basic Health Plan,Dental Only,401k 3% match,80,Flexible`;
-    
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'employee_template.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    toast({
-      title: "Template downloaded",
-      description: "Complete employee template has been downloaded.",
-    });
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <NavbarLoggedIn />
       <main className="container max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 pt-24">
-        {isLoading ? (
-          <div className="flex items-center justify-center min-h-[60vh]">
-            <div className="h-10 w-10 border-4 border-t-transparent border-primary rounded-full animate-spin"></div>
+        <div className="flex flex-col space-y-4">
+          <div className="flex justify-end">
+            <EmployeeActions 
+              onAddEmployee={() => setIsAddingEmployee(true)}
+              onMassUpload={() => setIsMassUploading(true)} 
+            />
           </div>
-        ) : (
-          <>
-            <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0 mb-6">
-              <div>
-                <h1 className="text-2xl font-bold">Employees</h1>
-                <p className="text-muted-foreground">
-                  Manage your company's employees
-                </p>
-              </div>
-              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="search"
-                    placeholder="Search employees..."
-                    className="pl-8 w-full md:w-[300px]"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <div className="flex space-x-2">
-                  <Button variant="outline" onClick={downloadEmployeeTemplate}>
-                    <Download className="mr-2 h-4 w-4" />
-                    Template
-                  </Button>
-                  <Button variant="outline" onClick={() => setIsMassUploading(true)}>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Mass Upload
-                  </Button>
-                  <Button onClick={() => setIsAddingEmployee(true)}>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Add Employee
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {filteredEmployees.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12">
-                <p className="text-muted-foreground mb-4">No employees found</p>
-                <Button onClick={() => setIsAddingEmployee(true)}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Add your first employee
-                </Button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredEmployees.map((employee) => (
-                  <EmployeeCard
-                    key={employee.id}
-                    employee={employee}
-                    onDelete={handleDeleteEmployee}
-                    onEdit={handleEdit}
-                    onViewDetails={handleViewDetails}
-                  />
-                ))}
-              </div>
-            )}
-          </>
-        )}
+          
+          <EmployeeList 
+            employees={employees}
+            onAddEmployee={() => setIsAddingEmployee(true)}
+            onDeleteEmployee={handleDeleteEmployee}
+            onEditEmployee={handleEdit}
+            onViewDetails={handleViewDetails}
+            isLoading={isLoading}
+          />
+        </div>
       </main>
       
       <AddEmployeeDialog 
@@ -310,4 +220,3 @@ Jane Smith,Developer,Engineering,jane.smith@example.com,+1-555-987-6543,EMP002,2
 };
 
 export default Employees;
-
