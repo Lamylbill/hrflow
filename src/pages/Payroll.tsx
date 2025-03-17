@@ -39,9 +39,18 @@ const Payroll = () => {
         const employee = employeesList.find(emp => emp.id === payroll.employeeId);
         
         if (employee && employee.salary) {
-          // Get monthly salary
-          const monthlySalary = employee.payFrequency === 'Bi-Weekly' || employee.payFrequency === 'Weekly' ? 
-            employee.salary : employee.salary / 12;
+          // Calculate monthly salary based on pay frequency
+          let monthlySalary = 0;
+          
+          if (employee.payFrequency === 'Monthly') {
+            monthlySalary = employee.salary / 12; // Annual to monthly
+          } else if (employee.payFrequency === 'Bi-Weekly') {
+            monthlySalary = (employee.salary / 26) * 2; // Bi-weekly to monthly equivalent
+          } else if (employee.payFrequency === 'Weekly') {
+            monthlySalary = (employee.salary / 52) * 4.33; // Weekly to monthly equivalent
+          } else {
+            monthlySalary = employee.salary / 12; // Default to monthly
+          }
             
           // Calculate actual values
           const bonus = payroll.bonus || 0;

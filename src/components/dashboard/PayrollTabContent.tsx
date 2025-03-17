@@ -27,13 +27,22 @@ const PayrollTabContent = () => {
         const updatedPayrollData = payrollItems.map(payroll => {
           const employee = employeeItems.find(emp => emp.id === payroll.employeeId);
           
+          // Default to 0 if no salary found
           let monthlySalary = 0;
+          
           if (employee?.salary) {
-            // If salary is defined for employee
-            monthlySalary = employee.payFrequency === 'Bi-Weekly' || employee.payFrequency === 'Weekly' ? 
-              employee.salary : employee.salary / 12;
-              
-            console.log(`Employee ${employee.name} has salary: ${employee.salary}, monthly: ${monthlySalary}`);
+            // Calculate monthly salary based on pay frequency
+            if (employee.payFrequency === 'Monthly') {
+              monthlySalary = employee.salary / 12; // Annual to monthly
+            } else if (employee.payFrequency === 'Bi-Weekly') {
+              monthlySalary = (employee.salary / 26) * 2; // Bi-weekly to monthly equivalent
+            } else if (employee.payFrequency === 'Weekly') {
+              monthlySalary = (employee.salary / 52) * 4.33; // Weekly to monthly equivalent
+            } else {
+              monthlySalary = employee.salary / 12; // Default to monthly
+            }
+            
+            console.log(`Employee ${employee.name} has annual salary: ${employee.salary}, calculated monthly: ${monthlySalary}`);
           }
           
           // Calculate updated values

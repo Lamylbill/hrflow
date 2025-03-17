@@ -1,4 +1,3 @@
-
 import React from "react";
 import { DollarSign, Calendar, Clock } from "lucide-react";
 import { Employee } from "@/types/employee";
@@ -14,8 +13,8 @@ const CompensationTab = ({ employee }: CompensationTabProps) => {
     : 'Not provided';
     
   // Calculate monthly salary for display
-  const monthlySalary = employee.salary && employee.payFrequency
-    ? (employee.payFrequency === 'Monthly' ? employee.salary : employee.salary / 12)
+  const monthlySalary = employee.salary 
+    ? employee.salary / 12
     : null;
     
   const formattedMonthlySalary = monthlySalary
