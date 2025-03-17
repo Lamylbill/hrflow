@@ -130,15 +130,19 @@ const Employees = () => {
   };
 
   const handleEdit = (id: string) => {
+    console.log("Editing employee with ID:", id);
     const employee = employees.find(e => e.id === id);
     if (employee) {
       setSelectedEmployee(employee);
       setIsEditing(true);
+    } else {
+      console.error("Employee not found with ID:", id);
     }
   };
 
   const handleEmployeeUpdate = async (updatedEmployee: Employee) => {
     try {
+      console.log("Updating employee:", updatedEmployee);
       await updateEmployee(updatedEmployee);
       await fetchEmployees();
       
@@ -213,6 +217,8 @@ const Employees = () => {
               setSelectedEmployee(null);
             }}
             employee={selectedEmployee}
+            onEdit={handleEdit}
+            onDelete={handleDeleteEmployee}
           />
           
           <EditEmployeeDialog

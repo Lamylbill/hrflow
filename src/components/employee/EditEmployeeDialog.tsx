@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -19,7 +18,7 @@ interface EditEmployeeDialogProps {
   onEmployeeUpdated: (employee: Employee) => void;
 }
 
-const MAX_IMAGE_SIZE_KB = 50; // 50KB max file size for profile photos
+const MAX_IMAGE_SIZE_KB = 5120; // 5MB max file size for profile photos
 
 const EditEmployeeDialog = ({ 
   open, 

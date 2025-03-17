@@ -24,15 +24,19 @@ interface EmployeeDetailsDialogProps {
 }
 
 const EmployeeDetailsDialog = ({ open, onClose, employee, onEdit, onDelete }: EmployeeDetailsDialogProps) => {
+  // The key issue was here - the handlers need to call the callbacks with the employee ID 
+  // and then close the dialog
   const handleEdit = () => {
     if (onEdit) {
       onEdit(employee.id);
+      onClose();
     }
   };
 
   const handleDelete = () => {
     if (onDelete) {
       onDelete(employee.id);
+      onClose();
     }
   };
 
