@@ -1,6 +1,6 @@
 
 import React from "react";
-import { PlusCircle, Upload, Download } from "lucide-react";
+import { PlusCircle, Upload, Download, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 
@@ -35,6 +35,15 @@ Jane Smith,Developer,Engineering,jane.smith@example.com,+1-555-987-6543,EMP002,2
     });
   };
   
+  const exportEmployeeData = () => {
+    // This would typically fetch all employee data and convert it to CSV
+    // For now we'll just show a toast notification
+    toast({
+      title: "Feature coming soon",
+      description: "Export functionality will be available in the next update.",
+    });
+  };
+  
   return (
     <div className="flex space-x-2">
       <Button variant="outline" onClick={downloadEmployeeTemplate}>
@@ -44,6 +53,10 @@ Jane Smith,Developer,Engineering,jane.smith@example.com,+1-555-987-6543,EMP002,2
       <Button variant="outline" onClick={onMassUpload}>
         <Upload className="mr-2 h-4 w-4" />
         Mass Upload
+      </Button>
+      <Button variant="outline" onClick={exportEmployeeData}>
+        <FileDown className="mr-2 h-4 w-4" />
+        Export
       </Button>
       <Button onClick={onAddEmployee}>
         <PlusCircle className="mr-2 h-4 w-4" />
