@@ -113,6 +113,25 @@ export const signOut = async () => {
       return { success: true };
     }
     
+    // Before signing out, handle employee record cleanup if needed
+    try {
+      const userId = sessionData.session.user.id;
+      
+      // Clean up any employee records associated with this user
+      // Setting user_id to null instead of deleting the employee
+      const { error: employeeUpdateError } = await supabase
+        .from('employees')
+        .update({ user_id: null })
+        .eq('user_id', userId);
+      
+      if (employeeUpdateError) {
+        console.warn("Error unlinking employee records:", employeeUpdateError.message);
+      }
+    } catch (cleanupError) {
+      console.error("Error during pre-signout cleanup:", cleanupError);
+      // Continue with sign out even if cleanup fails
+    }
+    
     // We have a session, attempt to sign out
     const { error } = await supabase.auth.signOut();
     
@@ -157,6 +176,37 @@ export const signOut = async () => {
     // Return a special flag to indicate client-side cleanup was done
     // even if the server-side session deletion failed
     return { success: true, clientCleanup: true, error };
+  }
+};
+
+// Helper function to delete a user account (for admin use or account deletion by user)
+export const deleteUserAccount = async (userId: string) => {
+  try {
+    // First, remove any association between the user and employee records
+    const { error: updateError } = await supabase
+      .from('employees')
+      .update({ user_id: null })
+      .eq('user_id', userId);
+    
+    if (updateError) {
+      console.error("Error unlinking employee records:", updateError);
+      throw updateError;
+    }
+    
+    // Now attempt to delete the user
+    // Note: This requires admin privileges or a server-side function
+    // This won't work with client-side code unless you're using a service role
+    const { error: deleteError } = await supabase.auth.admin.deleteUser(userId);
+    
+    if (deleteError) {
+      console.error("Error deleting user:", deleteError);
+      throw deleteError;
+    }
+    
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to delete user account:", error);
+    return { success: false, error };
   }
 };
 

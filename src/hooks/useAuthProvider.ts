@@ -203,6 +203,26 @@ export function useAuthProvider() {
         return;
       }
       
+      // Before signing out, handle employee record cleanup if needed
+      try {
+        const userId = sessionData.session.user.id;
+        
+        // Update any employee records associated with this user
+        // Setting user_id to null instead of deleting the employee
+        const { error: employeeUpdateError } = await supabase
+          .from('employees')
+          .update({ user_id: null })
+          .eq('user_id', userId);
+        
+        if (employeeUpdateError) {
+          console.warn("Error unlinking employee records:", employeeUpdateError.message);
+          // Continue with logout even if this fails
+        }
+      } catch (cleanupError) {
+        console.error("Error during pre-logout cleanup:", cleanupError);
+        // Continue with logout even if cleanup fails
+      }
+      
       // Attempt to sign out from Supabase
       const { error } = await supabase.auth.signOut();
       
