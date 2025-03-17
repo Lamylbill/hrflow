@@ -118,8 +118,8 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onViewDetails }: EmployeeCar
           open={showDetailsDialog}
           onClose={() => setShowDetailsDialog(false)}
           employee={employee}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
+          onEdit={() => handleEdit()}
+          onDelete={() => handleDelete()}
         />
       )}
     </>
