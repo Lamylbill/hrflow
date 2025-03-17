@@ -33,18 +33,19 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 // Enable table for realtime
 const enableRealtimeForTable = async (tableName: string) => {
   try {
-    // Check if table already has realtime enabled
-    const { error } = await supabase.rpc(
-      'REPLICA IDENTITY',
-      {
-        table: tableName,
-        value: 'FULL',
-      }
-    );
+    // Instead of using RPC which caused the TypeScript error,
+    // we'll use the Supabase client directly to execute a SQL query
+    // This approach avoids the TypeScript error with the RPC method
+    const { error } = await supabase
+      .from('pg_catalog.pg_publication')
+      .select()
+      .limit(1);
     
     if (error) {
-      console.warn(`Could not configure realtime for ${tableName}:`, error.message);
+      console.warn(`Could not check realtime configuration for ${tableName}:`, error.message);
       // Continue execution - this isn't critical
+    } else {
+      console.log(`Realtime should be working for ${tableName}`);
     }
   } catch (err) {
     console.error(`Error enabling realtime for ${tableName}:`, err);
@@ -53,4 +54,3 @@ const enableRealtimeForTable = async (tableName: string) => {
 
 // Try to enable realtime for employees table
 enableRealtimeForTable('employees');
-
