@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import NavbarLoggedIn from "@/components/NavbarLoggedIn";
 import Footer from "@/components/Footer";
@@ -7,22 +7,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProfileSettings from "@/components/settings/ProfileSettings";
 import PasswordSettings from "@/components/settings/PasswordSettings";
 import PreferencesSettings from "@/components/settings/PreferencesSettings";
+import CompanySettings from "@/components/settings/CompanySettings";
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState("profile");
   const navigate = useNavigate();
 
   // Check URL for specific settings section
-  const path = window.location.pathname;
-  useState(() => {
+  useEffect(() => {
+    const path = window.location.pathname;
     if (path.includes("/password")) {
       setActiveTab("password");
     } else if (path.includes("/preferences")) {
       setActiveTab("preferences");
+    } else if (path.includes("/company")) {
+      setActiveTab("company");
     } else {
       setActiveTab("profile");
     }
-  });
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -42,7 +45,7 @@ const Settings = () => {
               className="w-full"
             >
               <TabsList className="w-full border-b rounded-none bg-transparent p-0 h-auto dark:border-gray-700">
-                <div className="flex">
+                <div className="flex flex-wrap">
                   <TabsTrigger 
                     value="profile" 
                     className="py-3 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-none data-[state=active]:bg-transparent dark:text-gray-300 dark:data-[state=active]:text-white"
@@ -61,6 +64,12 @@ const Settings = () => {
                   >
                     Preferences
                   </TabsTrigger>
+                  <TabsTrigger 
+                    value="company" 
+                    className="py-3 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-none data-[state=active]:bg-transparent dark:text-gray-300 dark:data-[state=active]:text-white"
+                  >
+                    Company
+                  </TabsTrigger>
                 </div>
               </TabsList>
               <div className="p-6">
@@ -72,6 +81,9 @@ const Settings = () => {
                 </TabsContent>
                 <TabsContent value="preferences" className="m-0">
                   <PreferencesSettings />
+                </TabsContent>
+                <TabsContent value="company" className="m-0">
+                  <CompanySettings />
                 </TabsContent>
               </div>
             </Tabs>
