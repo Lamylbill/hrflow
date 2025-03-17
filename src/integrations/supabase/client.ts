@@ -30,26 +30,90 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   }
 });
 
-// Enable table for realtime
-const enableRealtimeForTable = async (tableName: string) => {
+// Define tables that should be enabled for realtime updates
+const REALTIME_TABLES = ['employees', 'leave_requests', 'payroll', 'activity_logs'];
+
+// Enable realtime for multiple tables
+const enableRealtimeForTables = async () => {
   try {
-    // Instead of trying to query pg_catalog tables which aren't in our TypeScript types,
-    // let's check if we can connect to our known tables as a simple connectivity test
+    console.log("Attempting to connect to Supabase and verify realtime functionality");
+    
+    // Check connectivity by querying a known table
     const { data, error } = await supabase
       .from('employees')
       .select('id')
       .limit(1);
     
     if (error) {
-      console.warn(`Could not verify realtime connectivity for ${tableName}:`, error.message);
-      // Continue execution - this isn't critical
+      console.warn("Could not verify Supabase connectivity:", error.message);
     } else {
-      console.log(`Realtime connectivity verified for ${tableName}`);
+      console.log("Supabase connection verified successfully");
+      
+      // Set up realtime channels for all tables
+      REALTIME_TABLES.forEach(tableName => {
+        const channel = supabase.channel(`realtime-${tableName}`)
+          .on('postgres_changes', {
+            event: '*', // Listen for all events (INSERT, UPDATE, DELETE)
+            schema: 'public',
+            table: tableName
+          }, (payload) => {
+            console.log(`Realtime update for ${tableName}:`, payload);
+          })
+          .subscribe((status) => {
+            console.log(`Realtime subscription status for ${tableName}:`, status);
+          });
+          
+        // Store channel reference if needed for cleanup
+        realtimeChannels.push(channel);
+      });
     }
   } catch (err) {
-    console.error(`Error checking realtime for ${tableName}:`, err);
+    console.error("Error initializing realtime functionality:", err);
   }
 };
 
-// Try to enable realtime for employees table
-enableRealtimeForTable('employees');
+// Store channel references for potential cleanup
+const realtimeChannels: ReturnType<typeof supabase.channel>[] = [];
+
+// Initialize realtime functionality
+enableRealtimeForTables();
+
+// Helper function to clean up realtime subscriptions
+export const cleanupRealtimeSubscriptions = () => {
+  realtimeChannels.forEach(channel => {
+    supabase.removeChannel(channel);
+  });
+  
+  // Clear the array
+  realtimeChannels.length = 0;
+  
+  console.log("Realtime subscriptions cleaned up");
+};
+
+// Export a function to create a realtime channel for specific filters
+export const createRealtimeChannel = (
+  tableName: string, 
+  event: 'INSERT' | 'UPDATE' | 'DELETE' | '*' = '*',
+  filter?: Record<string, any>,
+  callback?: (payload: any) => void
+) => {
+  if (!REALTIME_TABLES.includes(tableName)) {
+    console.warn(`Table ${tableName} is not configured for realtime updates`);
+    return null;
+  }
+  
+  const channelName = `${tableName}-${event}-${Date.now()}`;
+  const channel = supabase.channel(channelName)
+    .on('postgres_changes', {
+      event: event,
+      schema: 'public',
+      table: tableName,
+      filter: filter
+    }, (payload) => {
+      console.log(`Custom realtime update for ${tableName}:`, payload);
+      if (callback) callback(payload);
+    })
+    .subscribe();
+    
+  return channel;
+};

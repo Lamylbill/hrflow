@@ -1,7 +1,7 @@
 
 import { useEffect } from 'react';
 import { EventTypes, onEvent } from '@/utils/eventBus';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, createRealtimeChannel } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 
@@ -27,74 +27,51 @@ const DashboardEmployeeListener = ({ onEmployeeChange }: DashboardEmployeeListen
     
     // Set up Supabase realtime subscription for cross-browser updates
     let channel: any;
-    let reconnectTimer: any;
     
-    const setupRealtimeListener = () => {
-      if (!userId) return;
-      
-      console.log("Setting up Supabase realtime listener for employee changes, user:", userId);
-      
-      if (channel) {
-        supabase.removeChannel(channel);
-      }
-      
-      // Use a unique channel name with timestamp to avoid conflicts
-      const channelName = `employee-changes-${userId}-${Date.now()}`;
-      
-      // Subscribe to all changes in the employees table for this user
-      channel = supabase
-        .channel(channelName)
-        .on(
-          'postgres_changes',
-          {
-            event: '*', // Listen for all events (INSERT, UPDATE, DELETE)
-            schema: 'public',
-            table: 'employees',
-            filter: `user_id=eq.${userId}`
-          },
-          (payload) => {
-            console.log("Realtime employee change detected via Supabase:", payload);
-            onEmployeeChange();
-            toast({
-              title: "Employee data updated",
-              description: "Employee data has been updated from another session",
-            });
-          }
-        )
-        .subscribe((status: string) => {
-          console.log(`DashboardEmployeeListener: Supabase realtime subscription status (${channelName}):`, status);
+    if (userId) {
+      // Create a realtime channel specifically for this user's employees
+      channel = createRealtimeChannel(
+        'employees',
+        '*',  // Listen for all event types
+        userId ? { user_id: `eq.${userId}` } : undefined,
+        (payload) => {
+          console.log("Realtime employee change detected:", payload);
+          onEmployeeChange();
           
-          // If subscription failed, try to reconnect
-          if (status === 'SUBSCRIBED') {
-            console.log("Successfully subscribed to employee changes for user:", userId);
-            if (reconnectTimer) {
-              clearTimeout(reconnectTimer);
-              reconnectTimer = null;
-            }
-          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-            console.error(`Failed to subscribe to employee changes (${status})`);
-            
-            // Try to reconnect after 3 seconds
-            if (!reconnectTimer) {
-              reconnectTimer = setTimeout(() => {
-                console.log("Attempting to reconnect to Supabase realtime...");
-                setupRealtimeListener();
-              }, 3000);
-            }
+          // Show different toast messages based on the event type
+          const eventType = payload.eventType;
+          const employeeData = eventType === 'DELETE' ? payload.old_record : payload.new_record;
+          const employeeName = employeeData ? 
+            `${employeeData.first_name} ${employeeData.last_name}` : 
+            'Employee';
+          
+          let message = '';
+          
+          switch(eventType) {
+            case 'INSERT':
+              message = `New employee added: ${employeeName}`;
+              break;
+            case 'UPDATE':
+              message = `Employee updated: ${employeeName}`;
+              break;
+            case 'DELETE':
+              message = `Employee removed: ${employeeName}`;
+              break;
+            default:
+              message = "Employee data has been updated";
           }
-        });
-    };
-    
-    // Initial setup of realtime listener
-    setupRealtimeListener();
+          
+          toast({
+            title: "Employee data updated",
+            description: message,
+          });
+        }
+      );
+    }
     
     return () => {
       console.log("DashboardEmployeeListener unmounting, cleaning up listeners");
       eventCleanup();
-      
-      if (reconnectTimer) {
-        clearTimeout(reconnectTimer);
-      }
       
       if (channel) {
         supabase.removeChannel(channel);
