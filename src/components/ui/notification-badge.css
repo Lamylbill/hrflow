@@ -1,4 +1,7 @@
 
+/* Import tailwind components layer directly */
+@import "tailwindcss/components";
+
 @layer components {
   /* Custom styles for notification badges and avatar camera icons in dark mode */
   .notification-badge {
