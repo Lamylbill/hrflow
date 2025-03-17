@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { EventTypes, onEvent } from '@/utils/eventBus';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/hooks/use-toast';
 
 interface DashboardEmployeeListenerProps {
   onEmployeeChange: () => void;
@@ -31,9 +32,9 @@ const DashboardEmployeeListener = ({ onEmployeeChange }: DashboardEmployeeListen
       console.log("Setting up Supabase realtime listener for employee changes, user:", userId);
       
       // Subscribe to all changes in the employees table for this user
-      // Make sure we're using the correct channel name format
+      // Using the proper channel name format for Supabase realtime
       channel = supabase
-        .channel('public:employees:user_id=eq.' + userId)
+        .channel('employee-changes-' + userId)
         .on(
           'postgres_changes',
           {
@@ -45,10 +46,29 @@ const DashboardEmployeeListener = ({ onEmployeeChange }: DashboardEmployeeListen
           (payload) => {
             console.log("Realtime employee change detected via Supabase:", payload);
             onEmployeeChange();
+            toast({
+              title: "Employee data updated",
+              description: "Employee data has been updated from another session",
+            });
           }
         )
         .subscribe((status: string) => {
           console.log("Supabase realtime subscription status:", status);
+          
+          // If subscription failed, try to reconnect
+          if (status === 'SUBSCRIBED') {
+            console.log("Successfully subscribed to employee changes for user:", userId);
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error("Failed to subscribe to employee changes");
+            
+            // Try to reconnect after 3 seconds
+            setTimeout(() => {
+              if (channel) {
+                console.log("Attempting to reconnect to Supabase realtime...");
+                channel.subscribe();
+              }
+            }, 3000);
+          }
         });
     }
     
