@@ -1,4 +1,14 @@
 
+export interface EmployeeDocument {
+  id: string;
+  name: string;
+  size: number;
+  category: string;
+  type: string;
+  uploadDate: Date;
+  fileUrl?: string;
+}
+
 export interface Employee {
   id: string;
   name: string;
@@ -7,6 +17,7 @@ export interface Employee {
   email: string;
   phone: string;
   imageUrl?: string;
+  documents?: EmployeeDocument[];
   
   // Personal Information
   dateOfBirth?: string;

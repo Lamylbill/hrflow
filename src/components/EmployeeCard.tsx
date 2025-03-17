@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import EmployeeDetailsDialog from "./employee/EmployeeDetailsDialog";
 
 interface EmployeeCardProps {
   employee: {
@@ -112,54 +113,15 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onViewDetails }: EmployeeCar
         </div>
       </GlassCard>
 
-      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
-        <DialogContent className="sm:max-w-md dark:bg-gray-800 dark:text-white">
-          <DialogHeader>
-            <DialogTitle className="text-center mb-2 dark:text-white">Employee Details</DialogTitle>
-          </DialogHeader>
-          
-          <div className="flex flex-col items-center mb-4">
-            <Avatar className="h-24 w-24 mb-4">
-              <AvatarImage src={employee.imageUrl} alt={employee.name} />
-              <AvatarFallback className="bg-primary/10 text-primary text-2xl">
-                {employee.name.split(" ").map(n => n[0]).join("")}
-              </AvatarFallback>
-            </Avatar>
-            <h3 className="text-xl font-bold dark:text-white">{employee.name}</h3>
-            <p className="text-sm text-muted-foreground dark:text-gray-300">{employee.position} • {employee.department}</p>
-          </div>
-          
-          <div className="space-y-3">
-            <div className="flex items-center space-x-3">
-              <Mail className="h-5 w-5 text-muted-foreground" />
-              <span className="dark:text-gray-200">{employee.email}</span>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Phone className="h-5 w-5 text-muted-foreground" />
-              <span className="dark:text-gray-200">{employee.phone}</span>
-            </div>
-          </div>
-          
-          <div className="flex space-x-3 mt-4">
-            <Button 
-              className="flex-1 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600" 
-              variant="outline"
-              onClick={(e) => handleEdit(e)}
-            >
-              <Pencil className="mr-2 h-4 w-4" />
-              Edit
-            </Button>
-            <Button 
-              className="flex-1" 
-              variant="destructive"
-              onClick={(e) => handleDelete(e)}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {showDetailsDialog && (
+        <EmployeeDetailsDialog
+          open={showDetailsDialog}
+          onClose={() => setShowDetailsDialog(false)}
+          employee={employee}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
+      )}
     </>
   );
 };

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertCircle, FileText, Loader2, Upload, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { EmployeeDocument } from "@/types/employee";
 
 // Document categories and types
 const documentTypes = {
@@ -42,21 +43,12 @@ interface EmployeeDocumentUploadProps {
   onDocumentUploaded: () => void;
 }
 
-interface UploadedDocument {
-  id: string;
-  name: string;
-  size: number;
-  category: string;
-  type: string;
-  uploadDate: Date;
-}
-
 const EmployeeDocumentUpload = ({ employeeId, onDocumentUploaded }: EmployeeDocumentUploadProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedType, setSelectedType] = useState<string>("");
-  const [uploadedDocuments, setUploadedDocuments] = useState<UploadedDocument[]>([]);
+  const [uploadedDocuments, setUploadedDocuments] = useState<EmployeeDocument[]>([]);
 
   const availableTypes = selectedCategory ? documentTypes[selectedCategory as keyof typeof documentTypes] || [] : [];
 
@@ -88,7 +80,7 @@ const EmployeeDocumentUpload = ({ employeeId, onDocumentUploaded }: EmployeeDocu
         // Here we'd normally upload to Supabase storage, but for now we'll simulate it
         // Mock successful upload with timeout
         setTimeout(() => {
-          const newDocument: UploadedDocument = {
+          const newDocument: EmployeeDocument = {
             id: Date.now().toString(),
             name: file.name,
             size: fileSizeKB,
