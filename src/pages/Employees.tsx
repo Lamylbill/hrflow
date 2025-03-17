@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Employee } from "@/types/employee";
@@ -74,7 +75,7 @@ const Employees = () => {
           console.log("Employees page: Supabase employee data fetched", supabaseEmployees);
           
           // Map Supabase data to our Employee type
-          const formattedEmployees = supabaseEmployees.map(emp => ({
+          const formattedEmployees: Employee[] = supabaseEmployees.map(emp => ({
             id: emp.id,
             name: `${emp.first_name} ${emp.last_name}`,
             position: emp.position,
@@ -86,12 +87,12 @@ const Employees = () => {
             nationality: emp.nationality || '',
             address: emp.address || '',
             employeeId: emp.employee_id || '',
-            employmentType: emp.employment_type || 'Full-time',
+            employmentType: (emp.employment_type as 'Full-time' | 'Part-time' | 'Contract') || 'Full-time',
             hireDate: emp.hire_date || new Date().toISOString().split('T')[0],
             workLocation: emp.work_location || '',
             managerName: emp.manager_name || '',
-            status: emp.status || 'Active',
-            payFrequency: emp.pay_frequency || 'Monthly',
+            status: (emp.status as 'Active' | 'On Leave' | 'Terminated') || 'Active',
+            payFrequency: (emp.pay_frequency as 'Monthly' | 'Bi-Weekly' | 'Weekly') || 'Monthly',
             emergencyContactName: emp.emergency_contact_name || '',
             emergencyContactPhone: emp.emergency_contact_phone || '',
             emergencyContactRelationship: emp.emergency_contact_relationship || '',
@@ -105,7 +106,7 @@ const Employees = () => {
             healthInsurance: emp.health_insurance || '',
             dentalVisionCoverage: emp.dental_vision_coverage || '',
             retirementPlan: emp.retirement_plan || '',
-            workSchedule: emp.work_schedule || 'Fixed',
+            workSchedule: (emp.work_schedule as 'Fixed' | 'Flexible' | 'Remote') || 'Fixed',
             user_id: emp.user_id
           }));
           
@@ -217,8 +218,61 @@ const Employees = () => {
 
   const handleAddEmployee = async (employee: Omit<Employee, "id">) => {
     try {
+      // Add employee to localStorage and get new employee with ID
       const newEmployee = await addEmployee(employee);
-      await fetchEmployees();
+      
+      // If we have a userId, also save to Supabase
+      if (userId) {
+        const nameParts = employee.name.split(' ');
+        const firstName = nameParts[0];
+        const lastName = nameParts.slice(1).join(' ');
+        
+        // Insert the employee into Supabase
+        const { error: insertError } = await supabase
+          .from('employees')
+          .insert({
+            id: newEmployee.id, // Use the same ID as in localStorage
+            first_name: firstName,
+            last_name: lastName,
+            email: employee.email,
+            position: employee.position,
+            department: employee.department,
+            phone: employee.phone,
+            gender: employee.gender,
+            date_of_birth: employee.dateOfBirth || null,
+            nationality: employee.nationality,
+            address: employee.address,
+            employee_id: employee.employeeId,
+            employment_type: employee.employmentType,
+            hire_date: employee.hireDate || new Date().toISOString().split('T')[0],
+            work_location: employee.workLocation,
+            manager_name: employee.managerName,
+            status: employee.status,
+            pay_frequency: employee.payFrequency,
+            emergency_contact_name: employee.emergencyContactName,
+            emergency_contact_phone: employee.emergencyContactPhone,
+            emergency_contact_relationship: employee.emergencyContactRelationship,
+            emergency_contact_email: employee.emergencyContactEmail,
+            salary: employee.salary,
+            overtime_eligible: employee.overtimeEligible,
+            bonus_eligible: employee.bonusEligible,
+            tax_id: employee.taxId,
+            bank_account_details: employee.bankAccountDetails,
+            secondary_emergency_contact: employee.secondaryEmergencyContact,
+            health_insurance: employee.healthInsurance,
+            dental_vision_coverage: employee.dentalVisionCoverage,
+            retirement_plan: employee.retirementPlan,
+            work_schedule: employee.workSchedule,
+            user_id: userId
+          });
+          
+        if (insertError) {
+          console.error("Error adding employee to Supabase:", insertError);
+          // Still continue since we have it in localStorage
+        }
+      }
+      
+      await fetchEmployees(); // Refresh the list from the appropriate source
       
       emitEvent(EventTypes.EMPLOYEE_DATA_CHANGED, { action: 'add', employeeName: employee.name });
       
@@ -241,7 +295,23 @@ const Employees = () => {
     try {
       const employeeToDelete = employees.find(e => e.id === id);
       
+      // Delete from localStorage
       await deleteEmployee(id);
+      
+      // Also delete from Supabase if userId exists
+      if (userId) {
+        const { error } = await supabase
+          .from('employees')
+          .delete()
+          .eq('id', id)
+          .eq('user_id', userId);
+          
+        if (error) {
+          console.error("Error deleting employee from Supabase:", error);
+          // Still continue since we've deleted from localStorage
+        }
+      }
+      
       await fetchEmployees();
       
       emitEvent(EventTypes.EMPLOYEE_DATA_CHANGED, { 
@@ -286,7 +356,61 @@ const Employees = () => {
   const handleEmployeeUpdate = async (updatedEmployee: Employee) => {
     try {
       console.log("Updating employee:", updatedEmployee);
+      
+      // Update in localStorage
       await updateEmployee(updatedEmployee);
+      
+      // If userId exists, also update in Supabase
+      if (userId) {
+        const nameParts = updatedEmployee.name.split(' ');
+        const firstName = nameParts[0];
+        const lastName = nameParts.slice(1).join(' ');
+        
+        const { error } = await supabase
+          .from('employees')
+          .update({
+            first_name: firstName,
+            last_name: lastName,
+            email: updatedEmployee.email,
+            position: updatedEmployee.position,
+            department: updatedEmployee.department,
+            phone: updatedEmployee.phone,
+            gender: updatedEmployee.gender,
+            date_of_birth: updatedEmployee.dateOfBirth || null,
+            nationality: updatedEmployee.nationality,
+            address: updatedEmployee.address,
+            employee_id: updatedEmployee.employeeId,
+            employment_type: updatedEmployee.employmentType,
+            hire_date: updatedEmployee.hireDate,
+            work_location: updatedEmployee.workLocation,
+            manager_name: updatedEmployee.managerName,
+            status: updatedEmployee.status,
+            pay_frequency: updatedEmployee.payFrequency,
+            emergency_contact_name: updatedEmployee.emergencyContactName,
+            emergency_contact_phone: updatedEmployee.emergencyContactPhone,
+            emergency_contact_relationship: updatedEmployee.emergencyContactRelationship,
+            emergency_contact_email: updatedEmployee.emergencyContactEmail,
+            salary: updatedEmployee.salary,
+            overtime_eligible: updatedEmployee.overtimeEligible,
+            bonus_eligible: updatedEmployee.bonusEligible,
+            tax_id: updatedEmployee.taxId,
+            bank_account_details: updatedEmployee.bankAccountDetails,
+            secondary_emergency_contact: updatedEmployee.secondaryEmergencyContact,
+            health_insurance: updatedEmployee.healthInsurance,
+            dental_vision_coverage: updatedEmployee.dentalVisionCoverage,
+            retirement_plan: updatedEmployee.retirementPlan,
+            work_schedule: updatedEmployee.workSchedule,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', updatedEmployee.id)
+          .eq('user_id', userId);
+          
+        if (error) {
+          console.error("Error updating employee in Supabase:", error);
+          // Still continue since we've updated localStorage
+        }
+      }
+      
       await fetchEmployees();
       
       emitEvent(EventTypes.EMPLOYEE_DATA_CHANGED, { 
