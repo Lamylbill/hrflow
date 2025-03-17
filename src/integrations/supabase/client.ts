@@ -54,18 +54,22 @@ const enableRealtimeForTables = async () => {
         // Create the channel
         const channel = supabase.channel(`realtime-${tableName}`);
         
-        // Then configure it with the correct event structure
-        channel
-          .on('postgres_changes', { 
-            event: '*', 
-            schema: 'public', 
-            table: tableName 
-          }, (payload) => {
-            console.log(`Realtime update for ${tableName}:`, payload);
-          })
-          .subscribe((status) => {
-            console.log(`Realtime subscription status for ${tableName}:`, status);
-          });
+        // Subscribe to changes
+        channel.subscribe((status) => {
+          console.log(`Realtime subscription status for ${tableName}:`, status);
+        });
+        
+        // Listen for changes separately after subscription
+        if (status === 'SUBSCRIBED') {
+          // Add postgres changes listener
+          channel.on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: tableName },
+            (payload) => {
+              console.log(`Realtime update for ${tableName}:`, payload);
+            }
+          );
+        }
           
         // Store channel reference if needed for cleanup
         realtimeChannels.push(channel);
@@ -111,18 +115,23 @@ export const createRealtimeChannel = (
   // Create the channel
   const channel = supabase.channel(channelName);
   
-  // Configure it with correct event structure
-  channel
-    .on('postgres_changes', {
-      event: event,
-      schema: 'public',
-      table: tableName,
-      filter: filter
-    }, (payload) => {
-      console.log(`Custom realtime update for ${tableName}:`, payload);
-      if (callback) callback(payload);
-    })
-    .subscribe();
+  // Subscribe first
+  channel.subscribe((status) => {
+    console.log(`Custom realtime channel status for ${tableName}:`, status);
+    
+    // Only attach listener after successful subscription
+    if (status === 'SUBSCRIBED') {
+      // Add postgres changes listener
+      channel.on(
+        'postgres_changes',
+        { event: event, schema: 'public', table: tableName, filter: filter },
+        (payload) => {
+          console.log(`Custom realtime update for ${tableName}:`, payload);
+          if (callback) callback(payload);
+        }
+      );
+    }
+  });
     
   return channel;
 };
