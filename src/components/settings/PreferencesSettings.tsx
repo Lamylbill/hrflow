@@ -6,6 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useToast } from "@/hooks/use-toast";
+import DeletedItemsManager from "./DeletedItemsManager";
 
 const PreferencesSettings = () => {
   const { theme, toggleTheme } = useTheme();
@@ -112,6 +113,9 @@ const PreferencesSettings = () => {
           </div>
         </CardContent>
       </Card>
+      
+      {/* Added DeletedItemsManager component */}
+      <DeletedItemsManager />
     </div>
   );
 };

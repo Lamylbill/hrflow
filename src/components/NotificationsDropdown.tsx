@@ -4,6 +4,7 @@ import { Bell, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useAuth } from "@/contexts/AuthContext";
+import "../components/ui/notification-badge.css";
 
 interface Notification {
   id: string;
@@ -133,7 +134,7 @@ const NotificationsDropdown = ({ onToggle }: NotificationsDropdownProps) => {
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-primary text-xs flex items-center justify-center text-white">
+            <span className="absolute top-0 right-0 h-4 w-4 rounded-full notification-badge flex items-center justify-center text-xs">
               {unreadCount}
             </span>
           )}
