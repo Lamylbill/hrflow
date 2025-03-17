@@ -27,11 +27,23 @@ const PayrollTabContent = () => {
         const updatedPayrollData = payrollItems.map(payroll => {
           const employee = employeeItems.find(emp => emp.id === payroll.employeeId);
           
+          let monthlySalary = 0;
+          if (employee?.salary) {
+            // If salary is annual, divide by 12 for monthly payroll
+            monthlySalary = employee.payFrequency === 'Monthly' ? 
+              employee.salary / 12 : employee.salary;
+          }
+          
+          // Calculate updated values
+          const bonus = payroll.bonus || 0;
+          const deductions = payroll.deductions || 0;
+          const netPay = monthlySalary + bonus - deductions;
+          
           return {
             ...payroll,
-            // Use employee's actual salary if available
-            netPay: employee?.salary || payroll.netPay,
-            amount: employee?.salary || payroll.amount || payroll.netPay
+            salary: employee?.salary || payroll.salary || 0,
+            netPay: netPay || payroll.netPay,
+            amount: netPay || payroll.amount || payroll.netPay
           };
         });
         

@@ -29,7 +29,8 @@ const EmployeeDetailsDialog = ({ open, onClose, employee, onEdit, onDelete }: Em
   const handleEdit = () => {
     if (onEdit) {
       onEdit(employee.id);
-      onClose();
+      // Do NOT close the dialog here
+      // The Edit component will be shown instead
     }
   };
 

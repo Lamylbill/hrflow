@@ -8,13 +8,15 @@ import { Download, Plus, Filter, Search } from "lucide-react";
 import PayrollTable from "@/components/payroll/PayrollTable";
 import PayrollStats from "@/components/payroll/PayrollStats";
 import { PayrollData } from "@/types/payroll";
-import { getPayrollData, processPayroll } from "@/utils/localStorage";
+import { Employee } from "@/types/employee";
+import { getPayrollData, processPayroll, getEmployees } from "@/utils/localStorage";
 import { toast } from "@/hooks/use-toast";
 
 const Payroll = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterMonth, setFilterMonth] = useState("Current Month");
   const [payrollData, setPayrollData] = useState<PayrollData[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [pendingPayrollCount, setPendingPayrollCount] = useState(0);
 
   useEffect(() => {
@@ -24,13 +26,51 @@ const Payroll = () => {
 
   const loadPayrollData = async () => {
     try {
-      const data = await getPayrollData();
-      setPayrollData(data);
+      // Load both payroll data and employees to properly calculate actual salaries
+      const [payrollItems, employeesList] = await Promise.all([
+        getPayrollData(),
+        getEmployees()
+      ]);
+      
+      setEmployees(employeesList);
+      
+      // Update payroll data with correct salary information
+      const updatedPayrollData = payrollItems.map(payroll => {
+        const employee = employeesList.find(emp => emp.id === payroll.employeeId);
+        
+        if (employee && employee.salary) {
+          // Get monthly salary
+          const monthlySalary = employee.payFrequency === 'Monthly' ? 
+            employee.salary / 12 : employee.salary;
+            
+          // Calculate actual values
+          const bonus = payroll.bonus || 0;
+          const deductions = payroll.deductions || 0;
+          const netPay = monthlySalary + bonus - deductions;
+          
+          return {
+            ...payroll,
+            salary: employee.salary,
+            netPay: netPay,
+            amount: netPay
+          };
+        }
+        
+        return payroll;
+      });
+      
+      setPayrollData(updatedPayrollData);
+      
       // Count pending and processing items
-      const pendingCount = data.filter(p => p.status === "pending" || p.status === "processing").length;
+      const pendingCount = updatedPayrollData.filter(p => p.status === "pending" || p.status === "processing").length;
       setPendingPayrollCount(pendingCount);
     } catch (error) {
       console.error("Error loading payroll data:", error);
+      toast({
+        title: "Error Loading Data",
+        description: "Failed to load payroll data. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -78,6 +118,48 @@ const Payroll = () => {
       });
     }
   };
+  
+  // Function to export payroll data as CSV
+  const handleExportPayroll = () => {
+    try {
+      // Create CSV content
+      let csvContent = "Employee Name,Position,Salary,Bonus,Deductions,Net Pay,Status,Payment Date\n";
+      
+      payrollData.forEach((item) => {
+        // Format date properly if it exists
+        const paymentDate = item.paymentDate ? new Date(item.paymentDate).toISOString().split('T')[0] : "Pending";
+        
+        // Escape fields that might contain commas
+        const escapedName = `"${item.employeeName.replace(/"/g, '""')}"`;
+        const escapedPosition = `"${item.position.replace(/"/g, '""')}"`;
+        
+        csvContent += `${escapedName},${escapedPosition},${item.salary},${item.bonus},${item.deductions},${item.netPay},${item.status},${paymentDate}\n`;
+      });
+      
+      // Create blob and download link
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `payroll_data_${new Date().toISOString().split('T')[0]}.csv`);
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast({
+        title: "Export Successful",
+        description: "Payroll data has been exported to CSV",
+      });
+    } catch (error) {
+      console.error("Error exporting payroll data:", error);
+      toast({
+        title: "Export Failed",
+        description: "There was an error exporting the payroll data",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -95,7 +177,11 @@ const Payroll = () => {
             </div>
 
             <div className="flex gap-2 mt-4 md:mt-0">
-              <AnimatedButton variant="outline" className="flex items-center">
+              <AnimatedButton 
+                variant="outline" 
+                className="flex items-center"
+                onClick={handleExportPayroll}
+              >
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </AnimatedButton>

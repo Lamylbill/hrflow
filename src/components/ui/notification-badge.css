@@ -3,14 +3,18 @@
 .notification-badge {
   @apply bg-gradient-to-b from-pink-500 to-purple-600 dark:from-pink-400 dark:to-purple-500;
   @apply text-white font-semibold shadow-lg;
+  /* Improved visibility */
+  @apply ring-2 ring-white dark:ring-gray-800;
 }
 
 .camera-icon {
-  @apply text-gray-700 dark:text-sky-300 hover:text-primary dark:hover:text-sky-100;
+  @apply text-gray-700 dark:text-white hover:text-primary dark:hover:text-sky-100;
   @apply transition-colors duration-200;
+  /* Improved visibility with higher contrast */
+  @apply bg-gray-100 dark:bg-gray-600 p-1 rounded-full;
 }
 
 /* Improve visibility for all icons in dark mode */
 .dark .icon-highlight {
-  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.5));
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.7));
 }
