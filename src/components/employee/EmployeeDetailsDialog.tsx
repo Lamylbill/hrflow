@@ -27,14 +27,12 @@ const EmployeeDetailsDialog = ({ open, onClose, employee, onEdit, onDelete }: Em
   const handleEdit = () => {
     if (onEdit) {
       onEdit(employee.id);
-      onClose();
     }
   };
 
   const handleDelete = () => {
     if (onDelete) {
       onDelete(employee.id);
-      onClose();
     }
   };
 

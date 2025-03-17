@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { Mail, Phone, Pencil, Trash2 } from "lucide-react";
 import GlassCard from "./GlassCard";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -141,8 +140,8 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onViewDetails }: EmployeeCar
           open={showDetailsDialog}
           onClose={() => setShowDetailsDialog(false)}
           employee={employee}
-          onEdit={() => handleEdit()}
-          onDelete={() => handleDelete()}
+          onEdit={onEdit}
+          onDelete={onDelete}
         />
       )}
     </>

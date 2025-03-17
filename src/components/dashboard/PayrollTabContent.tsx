@@ -3,27 +3,47 @@ import { useEffect, useState } from "react";
 import { DollarSign, CreditCard, Calendar, Download, BarChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PayrollData, PayrollStatus } from "@/types/payroll";
-import { getPayrollData } from "@/utils/localStorage";
+import { getPayrollData, getEmployees } from "@/utils/localStorage";
 import { formatCurrency } from "@/utils/formatters";
+import { Employee } from "@/types/employee";
 
 const PayrollTabContent = () => {
   const [payrollData, setPayrollData] = useState<PayrollData[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Load payroll data
-    const loadPayrollData = async () => {
+    // Load payroll data and employees
+    const loadData = async () => {
       try {
-        const data = await getPayrollData();
-        setPayrollData(data);
+        const [payrollItems, employeeItems] = await Promise.all([
+          getPayrollData(),
+          getEmployees()
+        ]);
+        
+        setEmployees(employeeItems);
+        
+        // Map payroll data with actual employee salaries where applicable
+        const updatedPayrollData = payrollItems.map(payroll => {
+          const employee = employeeItems.find(emp => emp.id === payroll.employeeId);
+          
+          return {
+            ...payroll,
+            // Use employee's actual salary if available
+            netPay: employee?.salary || payroll.netPay,
+            amount: employee?.salary || payroll.amount || payroll.netPay
+          };
+        });
+        
+        setPayrollData(updatedPayrollData);
       } catch (error) {
-        console.error("Error loading payroll data:", error);
+        console.error("Error loading data:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadPayrollData();
+    loadData();
   }, []);
 
   // Count by status
