@@ -53,7 +53,7 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onViewDetails }: EmployeeCar
     }
   };
 
-  const handleViewDetails = () => {
+  const handleCardClick = () => {
     if (onViewDetails) {
       onViewDetails(employee.id);
     } else {
@@ -67,7 +67,7 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onViewDetails }: EmployeeCar
         className="transition-all duration-300 cursor-pointer"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        onClick={handleViewDetails}
+        onClick={handleCardClick}
         hoverEffect
       >
         <div className="flex items-center">

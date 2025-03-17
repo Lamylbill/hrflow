@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -15,19 +14,39 @@ import {
   Heart, 
   Award, 
   Clock,
-  Contact
+  Contact,
+  Edit,
+  Trash2,
+  FileText
 } from "lucide-react";
 import { Employee } from "@/types/employee";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import EmployeeDocumentUpload from "./EmployeeDocumentUpload";
 
 interface EmployeeDetailsDialogProps {
   open: boolean;
   onClose: () => void;
   employee: Employee;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
-const EmployeeDetailsDialog = ({ open, onClose, employee }: EmployeeDetailsDialogProps) => {
+const EmployeeDetailsDialog = ({ open, onClose, employee, onEdit, onDelete }: EmployeeDetailsDialogProps) => {
+  const handleEdit = () => {
+    if (onEdit) {
+      onEdit(employee.id);
+      onClose();
+    }
+  };
+
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete(employee.id);
+      onClose();
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-3xl max-h-[90vh]">
@@ -49,13 +68,25 @@ const EmployeeDetailsDialog = ({ open, onClose, employee }: EmployeeDetailsDialo
           <h3 className="text-xl font-bold">{employee.name}</h3>
           <p className="text-sm text-muted-foreground">{employee.position}</p>
         </div>
+
+        <div className="flex justify-center space-x-4 mb-4">
+          <Button onClick={handleEdit} className="flex items-center">
+            <Edit className="mr-2 h-4 w-4" />
+            Edit Employee
+          </Button>
+          <Button onClick={handleDelete} variant="destructive" className="flex items-center">
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete Employee
+          </Button>
+        </div>
         
         <ScrollArea className="h-[400px] pr-4">
           <Tabs defaultValue="personal" className="w-full">
-            <TabsList className="grid grid-cols-4 mb-4">
+            <TabsList className="grid grid-cols-5 mb-4">
               <TabsTrigger value="personal">Personal</TabsTrigger>
               <TabsTrigger value="employment">Employment</TabsTrigger>
               <TabsTrigger value="compensation">Compensation</TabsTrigger>
+              <TabsTrigger value="documents">Documents</TabsTrigger>
               <TabsTrigger value="other">Other Info</TabsTrigger>
             </TabsList>
             
@@ -259,6 +290,14 @@ const EmployeeDetailsDialog = ({ open, onClose, employee }: EmployeeDetailsDialo
                   <p className="text-sm text-muted-foreground">{employee.bonusEligible ? 'Yes' : 'No'}</p>
                 </div>
               </div>
+            </TabsContent>
+            
+            <TabsContent value="documents" className="space-y-4">
+              <h4 className="text-sm font-semibold text-muted-foreground mb-2">Employee Documents</h4>
+              <EmployeeDocumentUpload 
+                employeeId={employee.id} 
+                onDocumentUploaded={() => {}} 
+              />
             </TabsContent>
             
             <TabsContent value="other" className="space-y-4">

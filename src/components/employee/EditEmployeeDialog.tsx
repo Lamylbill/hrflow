@@ -16,7 +16,7 @@ interface EditEmployeeDialogProps {
   onEmployeeUpdated: (employee: Employee) => void;
 }
 
-const MAX_IMAGE_SIZE_KB = 200; // 200KB max file size
+const MAX_IMAGE_SIZE_KB = 50; // 50KB max file size for profile photos
 
 const EditEmployeeDialog = ({ 
   open, 
