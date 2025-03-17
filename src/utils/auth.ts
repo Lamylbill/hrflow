@@ -1,7 +1,7 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { initializeForNewUser } from "./initializeForNewUser";
 import { EventTypes, emitEvent } from "./eventBus";
+import { unlinkEmployeeFromUser } from "@/utils/userManagement";
 
 // Helper function to get user-specific storage keys
 const getUserSpecificKey = (userId: string, key: string): string => {
@@ -92,40 +92,21 @@ export const signIn = async (email: string, password: string) => {
   return { data, error: null };
 };
 
-// Sign out the current user
+// Sign out the user
 export const signOut = async () => {
   try {
-    // Get the current tab ID
-    const tabId = sessionStorage.getItem('tabId');
-    
-    // First check if we have a session before attempting to sign out
+    // First check if the session exists
     const { data: sessionData } = await supabase.auth.getSession();
-    
+
+    // If no session, just return success
     if (!sessionData.session) {
-      console.log("No active session found, cleaning up local storage only");
-      // Clean up tab-specific sessionStorage
-      if (tabId) {
-        sessionStorage.removeItem(`user:${tabId}`);
-        sessionStorage.removeItem(`userName:${tabId}`);
-        sessionStorage.removeItem(`userEmail:${tabId}`);
-        sessionStorage.removeItem('tabId');
-      }
       return { success: true };
     }
     
     // Before signing out, handle employee record cleanup if needed
     try {
-      const userId = sessionData.session.user.id;
-      
-      // Clean up any employee records associated with this user
-      // Setting user_id to null instead of deleting the employee
-      const { error: employeeUpdateError } = await supabase
-        .from('employees')
-        .update({ user_id: null })
-        .eq('user_id', userId);
-      
-      if (employeeUpdateError) {
-        console.warn("Error unlinking employee records:", employeeUpdateError.message);
+      if (sessionData.session.user) {
+        await unlinkEmployeeFromUser(sessionData.session.user.id);
       }
     } catch (cleanupError) {
       console.error("Error during pre-signout cleanup:", cleanupError);
@@ -138,20 +119,20 @@ export const signOut = async () => {
     if (error) {
       console.error("Supabase signOut error:", error);
       // Even if the API call fails, we should clean up sessionStorage
-      if (tabId) {
-        sessionStorage.removeItem(`user:${tabId}`);
-        sessionStorage.removeItem(`userName:${tabId}`);
-        sessionStorage.removeItem(`userEmail:${tabId}`);
+      if (sessionData.session) {
+        sessionStorage.removeItem(`user:${sessionData.session.user.id}`);
+        sessionStorage.removeItem(`userName:${sessionData.session.user.id}`);
+        sessionStorage.removeItem(`userEmail:${sessionData.session.user.id}`);
         sessionStorage.removeItem('tabId');
       }
       throw error;
     }
     
     // Clean up tab-specific sessionStorage data on logout
-    if (tabId) {
-      sessionStorage.removeItem(`user:${tabId}`);
-      sessionStorage.removeItem(`userName:${tabId}`);
-      sessionStorage.removeItem(`userEmail:${tabId}`);
+    if (sessionData.session) {
+      sessionStorage.removeItem(`user:${sessionData.session.user.id}`);
+      sessionStorage.removeItem(`userName:${sessionData.session.user.id}`);
+      sessionStorage.removeItem(`userEmail:${sessionData.session.user.id}`);
       sessionStorage.removeItem('tabId');
     }
     
@@ -179,36 +160,8 @@ export const signOut = async () => {
   }
 };
 
-// Helper function to delete a user account (for admin use or account deletion by user)
-export const deleteUserAccount = async (userId: string) => {
-  try {
-    // First, remove any association between the user and employee records
-    const { error: updateError } = await supabase
-      .from('employees')
-      .update({ user_id: null })
-      .eq('user_id', userId);
-    
-    if (updateError) {
-      console.error("Error unlinking employee records:", updateError);
-      throw updateError;
-    }
-    
-    // Now attempt to delete the user
-    // Note: This requires admin privileges or a server-side function
-    // This won't work with client-side code unless you're using a service role
-    const { error: deleteError } = await supabase.auth.admin.deleteUser(userId);
-    
-    if (deleteError) {
-      console.error("Error deleting user:", deleteError);
-      throw deleteError;
-    }
-    
-    return { success: true };
-  } catch (error) {
-    console.error("Failed to delete user account:", error);
-    return { success: false, error };
-  }
-};
+// Re-export the deleteUserAccount function for compatibility
+export { deleteUserAccount } from "@/utils/userManagement";
 
 // Get the current session
 export const getSession = async () => {

@@ -12,6 +12,7 @@ import EmployeeActions from "@/components/employee/EmployeeActions";
 import { getEmployees, addEmployee, deleteEmployee, updateEmployee } from "@/utils/localStorage";
 import { EventTypes, emitEvent } from "@/utils/eventBus";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Employees = () => {
   const navigate = useNavigate();
@@ -81,6 +82,22 @@ const Employees = () => {
   const handleDeleteEmployee = async (id: string) => {
     try {
       const employeeToDelete = employees.find(e => e.id === id);
+      
+      // If this employee is linked to a user account, first unlink it
+      if (employeeToDelete && employeeToDelete.user_id) {
+        const { error: unlinkError } = await supabase
+          .from('employees')
+          .update({ user_id: null })
+          .eq('id', id);
+        
+        if (unlinkError) {
+          console.error("Failed to unlink employee from user before deletion:", unlinkError);
+          // Continue with deletion anyway
+        } else {
+          console.log("Employee successfully unlinked from user account");
+        }
+      }
+      
       await deleteEmployee(id);
       await fetchEmployees();
       

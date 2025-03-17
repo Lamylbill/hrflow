@@ -18,6 +18,7 @@ export interface Employee {
   phone: string;
   imageUrl?: string;
   documents?: EmployeeDocument[];
+  user_id?: string; // Add user_id to map employees to users
   
   // Personal Information
   dateOfBirth?: string;

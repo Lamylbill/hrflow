@@ -1,10 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { EventTypes, emitEvent } from "@/utils/eventBus";
 import { getCurrentUserId } from "@/utils/auth";
+import { unlinkEmployeeFromUser } from "@/utils/userManagement";
 
 export function useAuthProvider() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -16,7 +16,6 @@ export function useAuthProvider() {
   useEffect(() => {
     let isMounted = true;
     
-    // Check if user is logged in on initial load
     const checkAuthStatus = async () => {
       try {
         const { data } = await supabase.auth.getSession();
@@ -26,9 +25,7 @@ export function useAuthProvider() {
         const isUserAuthenticated = !!data.session;
         setIsAuthenticated(isUserAuthenticated);
         
-        // Store user data if user is authenticated
         if (data.session?.user) {
-          // Use a tab-specific ID to prevent cross-contamination between tabs
           let tabId = sessionStorage.getItem('tabId');
           if (!tabId) {
             tabId = crypto.randomUUID();
@@ -38,13 +35,11 @@ export function useAuthProvider() {
           setUserId(data.session.user.id);
           sessionStorage.setItem(`user:${tabId}`, data.session.user.id);
           
-          // Update userName for this session/tab
           const userName = data.session.user.user_metadata?.name;
           if (userName) {
             sessionStorage.setItem(`userName:${tabId}`, userName);
           }
           
-          // Store email
           const email = data.session.user.email;
           if (email) {
             sessionStorage.setItem(`userEmail:${tabId}`, email);
@@ -77,7 +72,6 @@ export function useAuthProvider() {
     
     checkAuthStatus();
     
-    // Listen for authentication state changes
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted) return;
       
@@ -98,7 +92,6 @@ export function useAuthProvider() {
         setIsAuthenticated(true);
         setUserId(session.user.id);
         
-        // Use a tab-specific ID to prevent cross-contamination between tabs
         let tabId = sessionStorage.getItem('tabId');
         if (!tabId) {
           tabId = crypto.randomUUID();
@@ -107,13 +100,11 @@ export function useAuthProvider() {
         
         sessionStorage.setItem(`user:${tabId}`, session.user.id);
         
-        // Update userName for this session/tab
         const userName = session.user.user_metadata?.name;
         if (userName) {
           sessionStorage.setItem(`userName:${tabId}`, userName);
         }
         
-        // Store email
         const email = session.user.email;
         if (email) {
           sessionStorage.setItem(`userEmail:${tabId}`, email);
@@ -140,20 +131,17 @@ export function useAuthProvider() {
       
       setIsAuthenticated(true);
       if (data.user) {
-        // Generate a tab-specific ID
         const tabId = crypto.randomUUID();
         sessionStorage.setItem('tabId', tabId);
         
         setUserId(data.user.id);
         sessionStorage.setItem(`user:${tabId}`, data.user.id);
         
-        // Update userName for this session/tab
         const userName = data.user.user_metadata?.name;
         if (userName) {
           sessionStorage.setItem(`userName:${tabId}`, userName);
         }
         
-        // Store email for profile
         sessionStorage.setItem(`userEmail:${tabId}`, email);
       }
       
@@ -178,12 +166,9 @@ export function useAuthProvider() {
 
   const logout = async (): Promise<void> => {
     try {
-      // First check if the session exists
       const { data: sessionData } = await supabase.auth.getSession();
       
-      // If no session, just clean up the UI state and storage
       if (!sessionData.session) {
-        // Clean up local state
         setIsAuthenticated(false);
         setUserId(null);
         const tabId = sessionStorage.getItem('tabId');
@@ -203,33 +188,18 @@ export function useAuthProvider() {
         return;
       }
       
-      // Before signing out, handle employee record cleanup if needed
       try {
-        const userId = sessionData.session.user.id;
-        
-        // Update any employee records associated with this user
-        // Setting user_id to null instead of deleting the employee
-        const { error: employeeUpdateError } = await supabase
-          .from('employees')
-          .update({ user_id: null })
-          .eq('user_id', userId);
-        
-        if (employeeUpdateError) {
-          console.warn("Error unlinking employee records:", employeeUpdateError.message);
-          // Continue with logout even if this fails
+        if (sessionData.session.user) {
+          await unlinkEmployeeFromUser(sessionData.session.user.id);
         }
       } catch (cleanupError) {
         console.error("Error during pre-logout cleanup:", cleanupError);
-        // Continue with logout even if cleanup fails
       }
       
-      // Attempt to sign out from Supabase
       const { error } = await supabase.auth.signOut();
       
-      // Even if there's an API error, proceed with local cleanup
       if (error) {
         console.warn("Supabase logout warning:", error.message);
-        // Display a warning but don't stop the logout process
         toast({
           title: "Partial logout completed",
           description: "Your session may not be fully cleared on the server. Please refresh your browser.",
@@ -241,7 +211,6 @@ export function useAuthProvider() {
         });
       }
       
-      // Clean up session storage and React state regardless of server response
       const tabId = sessionStorage.getItem('tabId');
       if (tabId) {
         sessionStorage.removeItem(`user:${tabId}`);
@@ -257,7 +226,6 @@ export function useAuthProvider() {
     } catch (error: any) {
       console.error("Logout error:", error);
       
-      // Ensure the user is still logged out client-side despite any errors
       setIsAuthenticated(false);
       setUserId(null);
       const tabId = sessionStorage.getItem('tabId');
