@@ -18,7 +18,7 @@ const DashboardEmployeeListener = ({ onEmployeeChange }: DashboardEmployeeListen
   useEffect(() => {
     console.log("DashboardEmployeeListener mounted, setting up listener");
     
-    // Listen for employee data changes using the event bus
+    // Listen for employee data changes using the event bus (for same-browser updates)
     const eventCleanup = onEvent(EventTypes.EMPLOYEE_DATA_CHANGED, () => {
       console.log("Employee data change detected via event bus");
       onEmployeeChange();
@@ -31,15 +31,16 @@ const DashboardEmployeeListener = ({ onEmployeeChange }: DashboardEmployeeListen
       console.log("Setting up Supabase realtime listener for employee changes, user:", userId);
       
       // Subscribe to all changes in the employees table for this user
+      // Make sure we're using the correct channel name format
       channel = supabase
-        .channel('employee-changes')
+        .channel('public:employees:user_id=eq.' + userId)
         .on(
           'postgres_changes',
           {
             event: '*', // Listen for all events (INSERT, UPDATE, DELETE)
             schema: 'public',
             table: 'employees',
-            filter: userId ? `user_id=eq.${userId}` : undefined
+            filter: `user_id=eq.${userId}`
           },
           (payload) => {
             console.log("Realtime employee change detected via Supabase:", payload);

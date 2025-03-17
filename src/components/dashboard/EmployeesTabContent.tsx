@@ -1,28 +1,127 @@
-
 import { useEffect, useState } from "react";
 import { Users, UserPlus, Mail, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Employee } from "@/types/employee";
 import { getEmployees } from "@/utils/localStorage";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 const EmployeesTabContent = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { userId } = useAuth();
 
   useEffect(() => {
     const loadEmployees = async () => {
       try {
-        const data = await getEmployees();
-        setEmployees(data);
+        setIsLoading(true);
+        
+        // First try to get employees from Supabase
+        if (userId) {
+          const { data: supabaseEmployees, error } = await supabase
+            .from('employees')
+            .select('*')
+            .eq('user_id', userId);
+          
+          if (error) {
+            console.error("Error loading employees from Supabase:", error);
+            // Fall back to localStorage if Supabase fails
+            const localData = await getEmployees();
+            setEmployees(localData);
+          } else if (supabaseEmployees && supabaseEmployees.length > 0) {
+            console.log("Loaded employees from Supabase:", supabaseEmployees.length);
+            
+            // Map Supabase data to our Employee type
+            const formattedEmployees: Employee[] = supabaseEmployees.map(emp => ({
+              id: emp.id,
+              name: `${emp.first_name} ${emp.last_name}`,
+              position: emp.position,
+              department: emp.department,
+              email: emp.email,
+              phone: emp.phone || '',
+              gender: emp.gender || '',
+              dateOfBirth: emp.date_of_birth || '',
+              nationality: emp.nationality || '',
+              address: emp.address || '',
+              employeeId: emp.employee_id || '',
+              employmentType: (emp.employment_type as 'Full-time' | 'Part-time' | 'Contract') || 'Full-time',
+              hireDate: emp.hire_date || new Date().toISOString().split('T')[0],
+              workLocation: emp.work_location || '',
+              managerName: emp.manager_name || '',
+              status: (emp.status as 'Active' | 'On Leave' | 'Terminated') || 'Active',
+              payFrequency: (emp.pay_frequency as 'Monthly' | 'Bi-Weekly' | 'Weekly') || 'Monthly',
+              emergencyContactName: emp.emergency_contact_name || '',
+              emergencyContactPhone: emp.emergency_contact_phone || '',
+              emergencyContactRelationship: emp.emergency_contact_relationship || '',
+              emergencyContactEmail: emp.emergency_contact_email || '',
+              salary: emp.salary || 0,
+              overtimeEligible: emp.overtime_eligible || false,
+              bonusEligible: emp.bonus_eligible || false,
+              taxId: emp.tax_id || '',
+              bankAccountDetails: emp.bank_account_details || '',
+              secondaryEmergencyContact: emp.secondary_emergency_contact || '',
+              healthInsurance: emp.health_insurance || '',
+              dentalVisionCoverage: emp.dental_vision_coverage || '',
+              retirementPlan: emp.retirement_plan || '',
+              workSchedule: (emp.work_schedule as 'Fixed' | 'Flexible' | 'Remote') || 'Fixed',
+              user_id: emp.user_id
+            }));
+            
+            setEmployees(formattedEmployees);
+          } else {
+            // No data in Supabase, try localStorage
+            const localData = await getEmployees();
+            setEmployees(localData);
+          }
+        } else {
+          // No user ID, just use localStorage
+          const localData = await getEmployees();
+          setEmployees(localData);
+        }
       } catch (error) {
         console.error("Error loading employees:", error);
+        toast({
+          title: "Error loading data",
+          description: "Could not load employee data. Please try again.",
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
     loadEmployees();
-  }, []);
+    
+    // Set up realtime subscription for live updates
+    let channel: any;
+    if (userId) {
+      channel = supabase
+        .channel('public:employees:user_id=eq.' + userId)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'employees',
+            filter: `user_id=eq.${userId}`
+          },
+          (payload) => {
+            console.log("EmployeeTabContent: Realtime update detected:", payload);
+            loadEmployees(); // Reload employees when data changes
+          }
+        )
+        .subscribe((status: string) => {
+          console.log("EmployeeTabContent: Supabase realtime subscription status:", status);
+        });
+    }
+    
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, [userId]);
 
   const departmentCounts = employees.reduce((acc, employee) => {
     acc[employee.department] = (acc[employee.department] || 0) + 1;
