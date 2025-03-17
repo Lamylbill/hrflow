@@ -51,14 +51,22 @@ const enableRealtimeForTables = async () => {
       
       // Set up realtime channels for all tables
       REALTIME_TABLES.forEach(tableName => {
-        const channel = supabase.channel(`realtime-${tableName}`)
-          .on('postgres_changes', {
-            event: '*', // Listen for all events (INSERT, UPDATE, DELETE)
-            schema: 'public',
-            table: tableName
-          }, (payload) => {
-            console.log(`Realtime update for ${tableName}:`, payload);
-          })
+        // Fix: Using the correct typing for the channel
+        const channel = supabase.channel(`realtime-${tableName}`);
+        
+        // Fix: Properly chain the .on() method with correct types
+        channel
+          .on(
+            'postgres_changes',
+            {
+              event: '*', // Listen for all events (INSERT, UPDATE, DELETE)
+              schema: 'public',
+              table: tableName
+            },
+            (payload) => {
+              console.log(`Realtime update for ${tableName}:`, payload);
+            }
+          )
           .subscribe((status) => {
             console.log(`Realtime subscription status for ${tableName}:`, status);
           });
@@ -103,16 +111,25 @@ export const createRealtimeChannel = (
   }
   
   const channelName = `${tableName}-${event}-${Date.now()}`;
-  const channel = supabase.channel(channelName)
-    .on('postgres_changes', {
-      event: event,
-      schema: 'public',
-      table: tableName,
-      filter: filter
-    }, (payload) => {
-      console.log(`Custom realtime update for ${tableName}:`, payload);
-      if (callback) callback(payload);
-    })
+  
+  // Fix: Create the channel first, then configure it
+  const channel = supabase.channel(channelName);
+  
+  // Fix: Use the correct method chaining approach
+  channel
+    .on(
+      'postgres_changes',
+      {
+        event: event,
+        schema: 'public',
+        table: tableName,
+        filter: filter
+      },
+      (payload) => {
+        console.log(`Custom realtime update for ${tableName}:`, payload);
+        if (callback) callback(payload);
+      }
+    )
     .subscribe();
     
   return channel;
