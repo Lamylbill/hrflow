@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Users, UserPlus, Mail, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,7 +24,8 @@ const EmployeesTabContent = () => {
         const { data: supabaseEmployees, error } = await supabase
           .from('employees')
           .select('*')
-          .eq('user_id', userId);
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
         
         if (error) {
           console.error("Error loading employees from Supabase:", error);
@@ -33,6 +33,13 @@ const EmployeesTabContent = () => {
           const localData = await getEmployees();
           setEmployees(localData);
           console.log("EmployeesTabContent: Loaded from localStorage instead:", localData.length);
+          
+          // Show error toast
+          toast({
+            title: "Connection Error",
+            description: "Could not connect to the server. Using local data instead.",
+            variant: "destructive",
+          });
         } else if (supabaseEmployees && supabaseEmployees.length > 0) {
           console.log("EmployeesTabContent: Successfully loaded from Supabase:", supabaseEmployees.length);
           
@@ -103,9 +110,11 @@ const EmployeesTabContent = () => {
     // Set up realtime subscription for live updates
     let channel: any;
     if (userId) {
-      // Use a unique channel name with the user id
+      // Use a unique channel name with timestamp to avoid conflicts
+      const channelName = `employee-changes-tab-${userId}-${Date.now()}`;
+      
       channel = supabase
-        .channel('employee-changes-dashboard-' + userId)
+        .channel(channelName)
         .on(
           'postgres_changes',
           {
@@ -117,18 +126,46 @@ const EmployeesTabContent = () => {
           (payload) => {
             console.log("EmployeeTabContent: Realtime update detected:", payload);
             loadEmployees(); // Reload employees when data changes
+            
+            // Show toast notification for changes made in other sessions
+            if (payload.eventType === 'INSERT') {
+              toast({
+                title: "New employee added",
+                description: "Employee list has been updated from another session",
+              });
+            } else if (payload.eventType === 'UPDATE') {
+              toast({
+                title: "Employee updated",
+                description: "Employee data has been updated from another session",
+              });
+            } else if (payload.eventType === 'DELETE') {
+              toast({
+                title: "Employee removed",
+                description: "An employee has been removed in another session",
+              });
+            }
           }
         )
         .subscribe((status: string) => {
-          console.log("EmployeeTabContent: Supabase realtime subscription status:", status);
+          console.log(`EmployeeTabContent: Supabase realtime subscription status (${channelName}):`, status);
         });
     }
+    
+    // Poll for updates every 30 seconds as a fallback
+    const pollingInterval = setInterval(() => {
+      if (userId) {
+        console.log("EmployeesTabContent: Polling for updates");
+        loadEmployees();
+      }
+    }, 30000);
     
     return () => {
       if (channel) {
         console.log("EmployeeTabContent: Removing Supabase channel");
         supabase.removeChannel(channel);
       }
+      
+      clearInterval(pollingInterval);
     };
   }, [userId]);
 

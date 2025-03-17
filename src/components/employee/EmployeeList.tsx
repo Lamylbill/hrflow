@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { PlusCircle, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,6 +26,7 @@ const EmployeeList = ({
   const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>(employees);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Update filtered employees when the employees prop changes
   useEffect(() => {
     if (!searchQuery.trim()) {
       setFilteredEmployees(employees);

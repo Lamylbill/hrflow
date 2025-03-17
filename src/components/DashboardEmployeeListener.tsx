@@ -27,14 +27,23 @@ const DashboardEmployeeListener = ({ onEmployeeChange }: DashboardEmployeeListen
     
     // Set up Supabase realtime subscription for cross-browser updates
     let channel: any;
+    let reconnectTimer: any;
     
-    if (userId) {
+    const setupRealtimeListener = () => {
+      if (!userId) return;
+      
       console.log("Setting up Supabase realtime listener for employee changes, user:", userId);
       
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+      
+      // Use a unique channel name with timestamp to avoid conflicts
+      const channelName = `employee-changes-${userId}-${Date.now()}`;
+      
       // Subscribe to all changes in the employees table for this user
-      // Using the proper channel name format for Supabase realtime
       channel = supabase
-        .channel('employee-changes-' + userId)
+        .channel(channelName)
         .on(
           'postgres_changes',
           {
@@ -53,28 +62,39 @@ const DashboardEmployeeListener = ({ onEmployeeChange }: DashboardEmployeeListen
           }
         )
         .subscribe((status: string) => {
-          console.log("Supabase realtime subscription status:", status);
+          console.log(`DashboardEmployeeListener: Supabase realtime subscription status (${channelName}):`, status);
           
           // If subscription failed, try to reconnect
           if (status === 'SUBSCRIBED') {
             console.log("Successfully subscribed to employee changes for user:", userId);
-          } else if (status === 'CHANNEL_ERROR') {
-            console.error("Failed to subscribe to employee changes");
+            if (reconnectTimer) {
+              clearTimeout(reconnectTimer);
+              reconnectTimer = null;
+            }
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.error(`Failed to subscribe to employee changes (${status})`);
             
             // Try to reconnect after 3 seconds
-            setTimeout(() => {
-              if (channel) {
+            if (!reconnectTimer) {
+              reconnectTimer = setTimeout(() => {
                 console.log("Attempting to reconnect to Supabase realtime...");
-                channel.subscribe();
-              }
-            }, 3000);
+                setupRealtimeListener();
+              }, 3000);
+            }
           }
         });
-    }
+    };
+    
+    // Initial setup of realtime listener
+    setupRealtimeListener();
     
     return () => {
       console.log("DashboardEmployeeListener unmounting, cleaning up listeners");
       eventCleanup();
+      
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+      }
       
       if (channel) {
         supabase.removeChannel(channel);

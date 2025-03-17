@@ -23,4 +23,34 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   db: {
     schema: 'public',
   },
+  global: {
+    headers: {
+      'X-Client-Info': 'hrflow-webapp',
+    },
+  }
 });
+
+// Enable table for realtime
+const enableRealtimeForTable = async (tableName: string) => {
+  try {
+    // Check if table already has realtime enabled
+    const { error } = await supabase.rpc(
+      'REPLICA IDENTITY',
+      {
+        table: tableName,
+        value: 'FULL',
+      }
+    );
+    
+    if (error) {
+      console.warn(`Could not configure realtime for ${tableName}:`, error.message);
+      // Continue execution - this isn't critical
+    }
+  } catch (err) {
+    console.error(`Error enabling realtime for ${tableName}:`, err);
+  }
+};
+
+// Try to enable realtime for employees table
+enableRealtimeForTable('employees');
+
