@@ -1,18 +1,16 @@
 
 /* Custom styles for notification badges and avatar camera icons in dark mode */
-@layer components {
-  .notification-badge {
-    @apply bg-gradient-to-b from-pink-500 to-purple-600 dark:from-pink-400 dark:to-purple-500;
-    @apply text-white font-semibold shadow-lg;
-  }
+.notification-badge {
+  @apply bg-gradient-to-b from-pink-500 to-purple-600 dark:from-pink-400 dark:to-purple-500;
+  @apply text-white font-semibold shadow-lg;
+}
 
-  .camera-icon {
-    @apply text-gray-700 dark:text-sky-300 hover:text-primary dark:hover:text-sky-100;
-    @apply transition-colors duration-200;
-  }
-  
-  /* Improve visibility for all icons in dark mode */
-  .dark .icon-highlight {
-    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.5));
-  }
+.camera-icon {
+  @apply text-gray-700 dark:text-sky-300 hover:text-primary dark:hover:text-sky-100;
+  @apply transition-colors duration-200;
+}
+
+/* Improve visibility for all icons in dark mode */
+.dark .icon-highlight {
+  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.5));
 }
