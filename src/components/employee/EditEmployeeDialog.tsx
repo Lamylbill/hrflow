@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -73,6 +74,23 @@ const EditEmployeeDialog = ({
   const [uploadError, setUploadError] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [activeTab, setActiveTab] = useState("basic");
+
+  // Create type-safe handler functions for select components
+  const handleEmploymentTypeChange = (value: string) => {
+    setEmploymentType(value as 'Full-time' | 'Part-time' | 'Contract');
+  };
+
+  const handleStatusChange = (value: string) => {
+    setStatus(value as 'Active' | 'On Leave' | 'Terminated');
+  };
+
+  const handlePayFrequencyChange = (value: string) => {
+    setPayFrequency(value as 'Monthly' | 'Bi-Weekly' | 'Weekly');
+  };
+
+  const handleWorkScheduleChange = (value: string) => {
+    setWorkSchedule(value as 'Fixed' | 'Flexible' | 'Remote');
+  };
 
   // Reset form when employee changes
   useEffect(() => {
@@ -416,7 +434,7 @@ const EditEmployeeDialog = ({
                 
                 <div className="grid gap-2">
                   <Label htmlFor="employmentType" className="dark:text-gray-200">Employment Type</Label>
-                  <Select value={employmentType} onValueChange={setEmploymentType}>
+                  <Select value={employmentType} onValueChange={handleEmploymentTypeChange}>
                     <SelectTrigger className="dark:bg-gray-700 dark:text-white dark:border-gray-600">
                       <SelectValue />
                     </SelectTrigger>
@@ -461,7 +479,7 @@ const EditEmployeeDialog = ({
 
                 <div className="grid gap-2">
                   <Label htmlFor="status" className="dark:text-gray-200">Status</Label>
-                  <Select value={status} onValueChange={setStatus}>
+                  <Select value={status} onValueChange={handleStatusChange}>
                     <SelectTrigger className="dark:bg-gray-700 dark:text-white dark:border-gray-600">
                       <SelectValue />
                     </SelectTrigger>
@@ -490,7 +508,7 @@ const EditEmployeeDialog = ({
 
                 <div className="grid gap-2">
                   <Label htmlFor="payFrequency" className="dark:text-gray-200">Pay Frequency</Label>
-                  <Select value={payFrequency} onValueChange={setPayFrequency}>
+                  <Select value={payFrequency} onValueChange={handlePayFrequencyChange}>
                     <SelectTrigger className="dark:bg-gray-700 dark:text-white dark:border-gray-600">
                       <SelectValue />
                     </SelectTrigger>
@@ -657,7 +675,7 @@ const EditEmployeeDialog = ({
                   
                   <div className="grid gap-2">
                     <Label htmlFor="workSchedule" className="dark:text-gray-200">Work Schedule</Label>
-                    <Select value={workSchedule} onValueChange={setWorkSchedule}>
+                    <Select value={workSchedule} onValueChange={handleWorkScheduleChange}>
                       <SelectTrigger className="dark:bg-gray-700 dark:text-white dark:border-gray-600">
                         <SelectValue />
                       </SelectTrigger>
