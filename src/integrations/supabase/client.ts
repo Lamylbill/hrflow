@@ -42,48 +42,54 @@ const enableRealtimeForTables = async () => {
     console.log("Attempting to connect to Supabase and verify realtime functionality");
     
     // Check connectivity by querying a known table
-    const { data, error } = await supabase
-      .from('employees')
-      .select('id')
-      .limit(1);
-    
-    if (error) {
-      console.warn("Could not verify Supabase connectivity:", error.message);
-    } else {
-      console.log("Supabase connection verified successfully");
+    try {
+      const { error } = await supabase
+        .from('employees')
+        .select('id')
+        .limit(1);
       
-      // Set up realtime channels for all tables
-      REALTIME_TABLES.forEach(tableName => {
+      if (error) {
+        console.warn("Could not verify Supabase connectivity:", error.message);
+      } else {
+        console.log("Supabase connection verified successfully");
+      }
+    } catch (err) {
+      console.warn("Error querying database:", err);
+      // Continue with channel setup regardless of query result
+    }
+    
+    // Set up realtime channels for all tables
+    REALTIME_TABLES.forEach(tableName => {
+      try {
         // Create a unique channel name for each table
         const channelName = `table-db-changes-${tableName}`;
         
-        // Create and subscribe to the channel
-        const channel = supabase.channel(channelName)
-          .on(
-            'postgres_changes', 
-            { 
-              event: '*', 
-              schema: 'public', 
-              table: tableName 
-            },
-            (payload) => {
-              console.log(`Realtime update for ${tableName}:`, payload);
-            }
-          )
+        // Create the channel and set up the subscription
+        const channel = supabase
+          .channel(channelName)
+          .on('postgres_changes', {
+            event: '*', 
+            schema: 'public', 
+            table: tableName
+          }, (payload) => {
+            console.log(`Realtime update for ${tableName}:`, payload);
+          })
           .subscribe((status) => {
             console.log(`Realtime subscription status for ${tableName}:`, status);
           });
         
         // Store channel reference for potential cleanup
         realtimeChannels.push(channel);
-      });
-    }
+      } catch (err) {
+        console.error(`Error setting up realtime for ${tableName}:`, err);
+      }
+    });
   } catch (err) {
     console.error("Error initializing realtime functionality:", err);
   }
 };
 
-// Initialize realtime functionality
+// Initialize realtime functionality if tables exist
 enableRealtimeForTables();
 
 // Helper function to clean up realtime subscriptions
@@ -112,21 +118,18 @@ export const createRealtimeChannel = (
   
   const channelName = `${tableName}-${event}-${Date.now()}`;
   
-  // Create and subscribe to the channel
-  const channel = supabase.channel(channelName)
-    .on(
-      'postgres_changes',
-      {
-        event: event, 
-        schema: 'public', 
-        table: tableName, 
-        filter: filter
-      },
-      (payload) => {
-        console.log(`Custom realtime update for ${tableName}:`, payload);
-        if (callback) callback(payload);
-      }
-    )
+  // Create and subscribe to the channel with correct ordering
+  const channel = supabase
+    .channel(channelName)
+    .on('postgres_changes', {
+      event: event, 
+      schema: 'public', 
+      table: tableName, 
+      filter: filter
+    }, (payload) => {
+      console.log(`Custom realtime update for ${tableName}:`, payload);
+      if (callback) callback(payload);
+    })
     .subscribe((status) => {
       console.log(`Custom realtime channel status for ${tableName}:`, status);
     });

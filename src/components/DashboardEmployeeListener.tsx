@@ -32,49 +32,46 @@ const DashboardEmployeeListener = ({ onEmployeeChange }: DashboardEmployeeListen
       // Create a channel name
       const channelName = `employees-changes-${userId}`;
       
-      // Create and subscribe to the channel
-      channel = supabase.channel(channelName)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',  // Listen for all event types
-            schema: 'public',
-            table: 'employees',
-            filter: userId ? `user_id=eq.${userId}` : undefined
-          },
-          (payload: any) => {
-            console.log("Realtime employee change detected:", payload);
-            onEmployeeChange();
-            
-            // Show different toast messages based on the event type
-            const eventType = payload.eventType;
-            const employeeData = eventType === 'DELETE' ? payload.old_record : payload.new_record;
-            const employeeName = employeeData ? 
-              `${employeeData.first_name} ${employeeData.last_name}` : 
-              'Employee';
-            
-            let message = '';
-            
-            switch(eventType) {
-              case 'INSERT':
-                message = `New employee added: ${employeeName}`;
-                break;
-              case 'UPDATE':
-                message = `Employee updated: ${employeeName}`;
-                break;
-              case 'DELETE':
-                message = `Employee removed: ${employeeName}`;
-                break;
-              default:
-                message = "Employee data has been updated";
-            }
-            
-            toast({
-              title: "Employee data updated",
-              description: message,
-            });
+      // Create and subscribe to the channel with correct ordering of methods
+      channel = supabase
+        .channel(channelName)
+        .on('postgres_changes', {
+          event: '*',  // Listen for all event types
+          schema: 'public',
+          table: 'employees',
+          filter: userId ? `user_id=eq.${userId}` : undefined
+        }, (payload: any) => {
+          console.log("Realtime employee change detected:", payload);
+          onEmployeeChange();
+          
+          // Show different toast messages based on the event type
+          const eventType = payload.eventType;
+          const employeeData = eventType === 'DELETE' ? payload.old_record : payload.new_record;
+          const employeeName = employeeData ? 
+            `${employeeData.first_name} ${employeeData.last_name}` : 
+            'Employee';
+          
+          let message = '';
+          
+          switch(eventType) {
+            case 'INSERT':
+              message = `New employee added: ${employeeName}`;
+              break;
+            case 'UPDATE':
+              message = `Employee updated: ${employeeName}`;
+              break;
+            case 'DELETE':
+              message = `Employee removed: ${employeeName}`;
+              break;
+            default:
+              message = "Employee data has been updated";
           }
-        )
+          
+          toast({
+            title: "Employee data updated",
+            description: message,
+          });
+        })
         .subscribe((status) => {
           console.log("Employee realtime subscription status:", status);
         });
