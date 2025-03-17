@@ -1,3 +1,4 @@
+
 export type ActivityAction = 
   | "create" 
   | "update" 
@@ -9,7 +10,8 @@ export type ActivityAction =
   | "export" 
   | "import" 
   | "upload"
-  | "duplicate_detected";
+  | "duplicate_detected"
+  | "restore";
 
 export type ActivityModule = "employees" | "leave" | "payroll" | "settings";
 

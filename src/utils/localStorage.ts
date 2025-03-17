@@ -4,7 +4,7 @@
 import { Employee } from "@/types/employee";
 import { LeaveRequest, LeaveStatus } from "@/types/leave";
 import { PayrollData, PayrollStatus } from "@/types/payroll";
-import { ActivityLog } from "@/types/activity";
+import { ActivityLog, DeletedItem } from "@/types/activity";
 import { supabase } from "@/integrations/supabase/client";
 
 // Get the current user ID
@@ -568,15 +568,18 @@ export const restoreDeletedItem = async (deletedItemId: string): Promise<boolean
           
           // Add to Supabase if possible
           try {
+            // Make sure we have the required hire_date field
+            const hireDate = employeeData.hireDate || new Date().toISOString().split('T')[0];
+            
             const { error } = await supabase
               .from('employees')
               .insert({
-                id: employeeData.id,
                 first_name: employeeData.name.split(' ')[0],
                 last_name: employeeData.name.split(' ').slice(1).join(' '),
                 email: employeeData.email,
                 position: employeeData.position,
                 department: employeeData.department,
+                hire_date: hireDate,  // Add the required hire_date field
                 user_id: userId
               });
               
