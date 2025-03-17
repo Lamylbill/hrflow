@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Bell, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -138,11 +139,11 @@ const NotificationsDropdown = ({ onToggle }: NotificationsDropdownProps) => {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 p-0">
-        <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+      <PopoverContent align="end" alignOffset={-5} className="w-80 p-0 mt-2">
+        <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
           <div className="flex items-center">
             <Bell className="h-4 w-4 mr-2 text-primary" />
-            <span className="font-medium">Notifications</span>
+            <span className="font-medium dark:text-white">Notifications</span>
             {unreadCount > 0 && (
               <span className="ml-2 px-2 py-0.5 bg-primary text-white text-xs rounded-full">
                 {unreadCount}
@@ -152,7 +153,7 @@ const NotificationsDropdown = ({ onToggle }: NotificationsDropdownProps) => {
           {unreadCount > 0 && (
             <button 
               onClick={markAllAsRead}
-              className="text-xs text-primary hover:text-primary/80"
+              className="text-xs text-primary hover:text-primary/80 dark:text-primary"
             >
               Mark all as read
             </button>
@@ -161,44 +162,44 @@ const NotificationsDropdown = ({ onToggle }: NotificationsDropdownProps) => {
         
         <div className="max-h-72 overflow-y-auto">
           {notifications.length === 0 ? (
-            <div className="p-4 text-center text-gray-500">No notifications</div>
+            <div className="p-4 text-center text-gray-500 dark:text-gray-400">No notifications</div>
           ) : (
             notifications.map(notification => (
               <div 
                 key={notification.id} 
-                className={`p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors ${notification.read ? 'bg-white' : 'bg-blue-50'}`}
+                className={`p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors dark:border-gray-700 dark:hover:bg-gray-700/50 ${notification.read ? 'bg-white dark:bg-gray-800' : 'bg-blue-50 dark:bg-blue-900/20'}`}
               >
                 <div className="flex justify-between">
-                  <span className={`text-xs px-2 py-0.5 rounded ${getTypeColor(notification.type)}`}>
+                  <span className={`text-xs px-2 py-0.5 rounded ${getTypeColor(notification.type)} dark:bg-opacity-20`}>
                     {notification.type.charAt(0).toUpperCase() + notification.type.slice(1)}
                   </span>
                   <div className="flex space-x-1">
                     {!notification.read && (
                       <button 
                         onClick={() => markAsRead(notification.id)}
-                        className="text-gray-400 hover:text-primary"
+                        className="text-gray-400 hover:text-primary dark:text-gray-500 dark:hover:text-primary"
                       >
                         <Check className="h-4 w-4" />
                       </button>
                     )}
                     <button 
                       onClick={() => removeNotification(notification.id)}
-                      className="text-gray-400 hover:text-red-500"
+                      className="text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400"
                     >
                       <X className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
-                <div className="font-medium text-sm mt-1">{notification.title}</div>
-                <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+                <div className="font-medium text-sm mt-1 dark:text-white">{notification.title}</div>
+                <p className="text-sm text-gray-600 mt-1 dark:text-gray-300">{notification.message}</p>
                 <div className="text-xs text-gray-400 mt-2">{formatTime(notification.timestamp)}</div>
               </div>
             ))
           )}
         </div>
         
-        <div className="p-3 text-center border-t border-gray-200">
-          <button className="text-sm text-primary hover:text-primary/80">
+        <div className="p-3 text-center border-t border-gray-200 dark:border-gray-700">
+          <button className="text-sm text-primary hover:text-primary/80 dark:text-primary dark:hover:text-primary/80">
             View all notifications
           </button>
         </div>

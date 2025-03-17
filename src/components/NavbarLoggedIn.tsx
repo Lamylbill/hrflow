@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import NotificationsDropdown from "@/components/NotificationsDropdown";
@@ -29,6 +29,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 const NavbarLoggedIn = () => {
   const { logout, userId } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userName, setUserName] = useState<string>("User");
@@ -63,6 +64,7 @@ const NavbarLoggedIn = () => {
   const handleLogout = async () => {
     try {
       await logout();
+      navigate("/login");
     } catch (error) {
       console.error("Logout error:", error);
     }
@@ -169,11 +171,11 @@ const NavbarLoggedIn = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Show burger menu on mobile OR medium screens */}
+            {/* Show burger menu on mobile OR medium screens, with increased right margin */}
             {shouldShowVerticalMenu && (
               <Button
                 variant="ghost"
-                className="ml-2"
+                className="ml-2 mr-2"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               >
                 {mobileMenuOpen ? (
