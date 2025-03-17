@@ -60,6 +60,10 @@ export const initializeLocalStorage = async () => {
   if (!localStorage.getItem(getUserSpecificKey(userId, "activityLogs"))) {
     localStorage.setItem(getUserSpecificKey(userId, "activityLogs"), JSON.stringify([]));
   }
+
+  if (!localStorage.getItem(getUserSpecificKey(userId, "deletedItems"))) {
+    localStorage.setItem(getUserSpecificKey(userId, "deletedItems"), JSON.stringify([]));
+  }
 };
 
 // Employee CRUD operations - Now correctly handling promises
@@ -246,22 +250,25 @@ export const deleteEmployee = async (id: string): Promise<boolean> => {
   }
   
   try {
+    // First get the employee data to save it before deletion
+    const employees = await getEmployees();
+    const employeeToDelete = employees.find(e => e.id === id);
+    
+    if (!employeeToDelete) {
+      return false;
+    }
+    
+    // Save the deleted employee data
+    await saveDeletedItem('employee', employeeToDelete);
+    
     // Delete from Supabase
     const { error } = await supabase
       .from('employees')
       .delete()
       .eq('id', id)
-      .eq('user_id', userId); // Add user_id filter to ensure we only delete the user's own employees
+      .eq('user_id', userId);
       
     if (error) throw error;
-    
-    // Log activity
-    await logActivity({
-      action: "delete",
-      module: "employees",
-      description: `Deleted employee with ID: ${id}`,
-      timestamp: new Date().toISOString(),
-    });
     
     return true;
   } catch (error) {
@@ -273,16 +280,12 @@ export const deleteEmployee = async (id: string): Promise<boolean> => {
     
     if (index !== -1) {
       const deletedEmployee = employees[index];
+      
+      // Save the deleted employee data
+      await saveDeletedItem('employee', deletedEmployee);
+      
       employees.splice(index, 1);
       localStorage.setItem(getUserSpecificKey(userId, "employees"), JSON.stringify(employees));
-      
-      // Log activity
-      logActivity({
-        action: "delete",
-        module: "employees",
-        description: `Deleted employee: ${deletedEmployee.name}`,
-        timestamp: new Date().toISOString(),
-      });
       
       return true;
     }
@@ -479,4 +482,131 @@ export const logActivity = async (log: Omit<ActivityLog, "id">): Promise<Activit
 // Initialize data on app start
 export const initializeApp = () => {
   initializeLocalStorage();
+};
+
+// Add utility for deleted items
+const saveDeletedItem = async (entityType: 'employee' | 'payroll' | 'leave', entityData: any): Promise<DeletedItem> => {
+  const userId = await getCurrentUserId();
+  
+  if (!userId) {
+    throw new Error("No user logged in, cannot save deleted item");
+  }
+  
+  const deletedItem: DeletedItem = {
+    id: Date.now().toString(),
+    entityType,
+    entityData,
+    deletedAt: new Date().toISOString(),
+    deletedBy: userId,
+    expiryDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString() // 15 days from now
+  };
+  
+  const deletedItems = await getDeletedItems();
+  deletedItems.push(deletedItem);
+  localStorage.setItem(getUserSpecificKey(userId, "deletedItems"), JSON.stringify(deletedItems));
+  
+  // Log activity
+  await logActivity({
+    action: "delete",
+    module: entityType === 'employee' ? "employees" : entityType === 'leave' ? "leave" : "payroll",
+    description: `Deleted ${entityType}: ${entityData.id}`,
+    timestamp: new Date().toISOString(),
+  });
+  
+  return deletedItem;
+};
+
+export const getDeletedItems = async (): Promise<DeletedItem[]> => {
+  const userId = await getCurrentUserId();
+  
+  if (!userId) {
+    return [];
+  }
+  
+  const deletedItems = localStorage.getItem(getUserSpecificKey(userId, "deletedItems"));
+  const items = deletedItems ? JSON.parse(deletedItems) : [];
+  
+  // Filter out expired items (older than 15 days)
+  const validItems = items.filter((item: DeletedItem) => {
+    return new Date(item.expiryDate) > new Date();
+  });
+  
+  // If we filtered out some expired items, update the storage
+  if (validItems.length !== items.length) {
+    localStorage.setItem(getUserSpecificKey(userId, "deletedItems"), JSON.stringify(validItems));
+  }
+  
+  return validItems;
+};
+
+export const restoreDeletedItem = async (deletedItemId: string): Promise<boolean> => {
+  const userId = await getCurrentUserId();
+  
+  if (!userId) {
+    throw new Error("No user logged in, cannot restore item");
+  }
+  
+  const deletedItems = await getDeletedItems();
+  const itemIndex = deletedItems.findIndex(item => item.id === deletedItemId);
+  
+  if (itemIndex === -1) {
+    return false;
+  }
+  
+  const itemToRestore = deletedItems[itemIndex];
+  
+  try {
+    switch (itemToRestore.entityType) {
+      case 'employee':
+        const employees = await getEmployees();
+        const employeeData = itemToRestore.entityData;
+        
+        // Check if employee with same ID already exists
+        if (!employees.some(e => e.id === employeeData.id)) {
+          employees.push(employeeData);
+          localStorage.setItem(getUserSpecificKey(userId, "employees"), JSON.stringify(employees));
+          
+          // Add to Supabase if possible
+          try {
+            const { error } = await supabase
+              .from('employees')
+              .insert({
+                id: employeeData.id,
+                first_name: employeeData.name.split(' ')[0],
+                last_name: employeeData.name.split(' ').slice(1).join(' '),
+                email: employeeData.email,
+                position: employeeData.position,
+                department: employeeData.department,
+                user_id: userId
+              });
+              
+            if (error) console.error("Error adding restored employee to Supabase:", error);
+          } catch (error) {
+            console.error("Error restoring employee to Supabase:", error);
+          }
+        }
+        break;
+        
+      // Add cases for other entity types as needed
+      // case 'payroll': ...
+      // case 'leave': ...
+    }
+    
+    // Remove the item from deleted items
+    deletedItems.splice(itemIndex, 1);
+    localStorage.setItem(getUserSpecificKey(userId, "deletedItems"), JSON.stringify(deletedItems));
+    
+    // Log activity
+    await logActivity({
+      action: "restore",
+      module: itemToRestore.entityType === 'employee' ? "employees" : itemToRestore.entityType === 'leave' ? "leave" : "payroll",
+      description: `Restored ${itemToRestore.entityType} that was previously deleted`,
+      timestamp: new Date().toISOString(),
+    });
+    
+    return true;
+  } catch (error) {
+    console.error("Error restoring deleted item:", error);
+    return false;
+  }
 };

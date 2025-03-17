@@ -12,6 +12,15 @@ const CompensationTab = ({ employee }: CompensationTabProps) => {
   const formattedSalary = employee.salary 
     ? `$${employee.salary.toLocaleString()}`
     : 'Not provided';
+    
+  // Calculate monthly salary for display
+  const monthlySalary = employee.salary && employee.payFrequency
+    ? (employee.payFrequency === 'Monthly' ? employee.salary : employee.salary / 12)
+    : null;
+    
+  const formattedMonthlySalary = monthlySalary
+    ? `$${monthlySalary.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+    : 'Not provided';
 
   return (
     <div className="space-y-4">
@@ -20,9 +29,19 @@ const CompensationTab = ({ employee }: CompensationTabProps) => {
       <div className="grid grid-cols-[20px_1fr] gap-x-2 items-center">
         <DollarSign className="h-5 w-5 text-muted-foreground" />
         <div>
-          <p className="text-sm font-medium">Salary/Rate</p>
+          <p className="text-sm font-medium">Annual Salary</p>
           <p className="text-sm text-muted-foreground">
             {formattedSalary}
+          </p>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-[20px_1fr] gap-x-2 items-center">
+        <DollarSign className="h-5 w-5 text-muted-foreground" />
+        <div>
+          <p className="text-sm font-medium">Monthly Salary</p>
+          <p className="text-sm text-muted-foreground">
+            {formattedMonthlySalary}
           </p>
         </div>
       </div>

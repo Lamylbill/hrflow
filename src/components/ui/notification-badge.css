@@ -2,7 +2,7 @@
 /* Custom styles for notification badges and avatar camera icons in dark mode */
 .notification-badge {
   @apply bg-gradient-to-b from-pink-500 to-purple-600 dark:from-pink-400 dark:to-purple-500;
-  @apply text-white font-semibold shadow-lg;
+  @apply text-black dark:text-white font-semibold shadow-lg;
   /* Improved visibility */
   @apply ring-2 ring-white dark:ring-gray-800;
 }
@@ -11,7 +11,8 @@
   @apply text-gray-700 dark:text-white hover:text-primary dark:hover:text-sky-100;
   @apply transition-colors duration-200;
   /* Improved visibility with higher contrast */
-  @apply bg-gray-100 dark:bg-gray-600 p-1 rounded-full;
+  @apply bg-gray-200 dark:bg-gray-600 p-1 rounded-full;
+  @apply ring-1 ring-gray-400 dark:ring-gray-300;
 }
 
 /* Improve visibility for all icons in dark mode */

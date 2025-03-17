@@ -1,4 +1,3 @@
-
 export type ActivityAction = 
   | "create" 
   | "update" 
@@ -22,4 +21,13 @@ export interface ActivityLog {
   timestamp: string;
   // Can contain additional metadata
   details?: Record<string, any>;
+}
+
+export interface DeletedItem {
+  id: string;
+  entityType: 'employee' | 'payroll' | 'leave'; 
+  entityData: any;
+  deletedAt: string;
+  deletedBy?: string;
+  expiryDate: string; // Date when this record should be permanently deleted
 }

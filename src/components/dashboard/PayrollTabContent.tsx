@@ -29,9 +29,11 @@ const PayrollTabContent = () => {
           
           let monthlySalary = 0;
           if (employee?.salary) {
-            // If salary is annual, divide by 12 for monthly payroll
-            monthlySalary = employee.payFrequency === 'Monthly' ? 
-              employee.salary / 12 : employee.salary;
+            // If salary is defined for employee
+            monthlySalary = employee.payFrequency === 'Bi-Weekly' || employee.payFrequency === 'Weekly' ? 
+              employee.salary : employee.salary / 12;
+              
+            console.log(`Employee ${employee.name} has salary: ${employee.salary}, monthly: ${monthlySalary}`);
           }
           
           // Calculate updated values
@@ -48,6 +50,7 @@ const PayrollTabContent = () => {
         });
         
         setPayrollData(updatedPayrollData);
+        console.log("Dashboard updated payroll data:", updatedPayrollData);
       } catch (error) {
         console.error("Error loading data:", error);
       } finally {

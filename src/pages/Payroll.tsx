@@ -40,8 +40,8 @@ const Payroll = () => {
         
         if (employee && employee.salary) {
           // Get monthly salary
-          const monthlySalary = employee.payFrequency === 'Monthly' ? 
-            employee.salary / 12 : employee.salary;
+          const monthlySalary = employee.payFrequency === 'Bi-Weekly' || employee.payFrequency === 'Weekly' ? 
+            employee.salary : employee.salary / 12;
             
           // Calculate actual values
           const bonus = payroll.bonus || 0;
@@ -60,6 +60,7 @@ const Payroll = () => {
       });
       
       setPayrollData(updatedPayrollData);
+      console.log("Updated payroll data:", updatedPayrollData);
       
       // Count pending and processing items
       const pendingCount = updatedPayrollData.filter(p => p.status === "pending" || p.status === "processing").length;
