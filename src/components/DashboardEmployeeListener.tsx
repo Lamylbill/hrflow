@@ -26,59 +26,63 @@ const DashboardEmployeeListener = ({ onEmployeeChange }: DashboardEmployeeListen
     });
     
     // Set up Supabase realtime subscription for cross-browser updates
-    let channel: any;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
     
     if (userId) {
       // Create a channel name
       const channelName = `employees-changes-${userId}`;
       
-      // Create and subscribe to the channel with proper event handling
-      channel = supabase
-        .channel(channelName)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',  // Listen for all event types
-            schema: 'public',
-            table: 'employees',
-            filter: userId ? `user_id=eq.${userId}` : undefined
-          },
-          (payload: any) => {
-            console.log("Realtime employee change detected:", payload);
-            onEmployeeChange();
-            
-            // Show different toast messages based on the event type
-            const eventType = payload.eventType;
-            const employeeData = eventType === 'DELETE' ? payload.old_record : payload.new_record;
-            const employeeName = employeeData ? 
-              `${employeeData.first_name} ${employeeData.last_name}` : 
-              'Employee';
-            
-            let message = '';
-            
-            switch(eventType) {
-              case 'INSERT':
-                message = `New employee added: ${employeeName}`;
-                break;
-              case 'UPDATE':
-                message = `Employee updated: ${employeeName}`;
-                break;
-              case 'DELETE':
-                message = `Employee removed: ${employeeName}`;
-                break;
-              default:
-                message = "Employee data has been updated";
+      // Create the channel
+      channel = supabase.channel(channelName);
+      
+      // Subscribe to the channel and set up postgres_changes listener on successful subscription
+      channel.subscribe((status) => {
+        console.log("Employee realtime subscription status:", status);
+        
+        if (status === 'SUBSCRIBED') {
+          channel?.on(
+            'postgres_changes',
+            {
+              event: '*',  // Listen for all event types
+              schema: 'public',
+              table: 'employees',
+              filter: userId ? `user_id=eq.${userId}` : undefined
+            },
+            (payload: any) => {
+              console.log("Realtime employee change detected:", payload);
+              onEmployeeChange();
+              
+              // Show different toast messages based on the event type
+              const eventType = payload.eventType;
+              const employeeData = eventType === 'DELETE' ? payload.old_record : payload.new_record;
+              const employeeName = employeeData ? 
+                `${employeeData.first_name} ${employeeData.last_name}` : 
+                'Employee';
+              
+              let message = '';
+              
+              switch(eventType) {
+                case 'INSERT':
+                  message = `New employee added: ${employeeName}`;
+                  break;
+                case 'UPDATE':
+                  message = `Employee updated: ${employeeName}`;
+                  break;
+                case 'DELETE':
+                  message = `Employee removed: ${employeeName}`;
+                  break;
+                default:
+                  message = "Employee data has been updated";
+              }
+              
+              toast({
+                title: "Employee data updated",
+                description: message,
+              });
             }
-            
-            toast({
-              title: "Employee data updated",
-              description: message,
-            });
-          }
-        )
-        .subscribe((status: string) => {
-          console.log("Employee realtime subscription status:", status);
-        });
+          );
+        }
+      });
     }
     
     return () => {
