@@ -9,6 +9,7 @@ import { Camera } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { EventTypes, emitEvent } from "@/utils/eventBus";
+import "../ui/notification-badge.css";
 
 const ProfileSettings = () => {
   const { userId } = useAuth();
@@ -96,9 +97,9 @@ const ProfileSettings = () => {
               {name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : 'U'}
             </AvatarFallback>
           </Avatar>
-          <div className="absolute bottom-0 right-0">
+          <div className="camera-icon-container">
             <label htmlFor="avatar-upload" className="cursor-pointer">
-              <div className="rounded-full bg-primary p-2 text-white hover:bg-primary/80 transition-colors">
+              <div className="camera-icon">
                 <Camera className="h-4 w-4" />
               </div>
               <input

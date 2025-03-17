@@ -2,13 +2,14 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trash, RefreshCw, Calendar } from "lucide-react";
+import { Trash, RefreshCw, Calendar, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { getDeletedItems, restoreDeletedItem } from "@/utils/localStorage";
 import { DeletedItem } from "@/types/activity";
 import { format, parseISO } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const DeletedItemsManager = () => {
   const [deletedItems, setDeletedItems] = useState<DeletedItem[]>([]);
@@ -91,7 +92,10 @@ const DeletedItemsManager = () => {
   return (
     <Card className="border dark:border-gray-700 dark:bg-gray-800 mb-6">
       <CardHeader className="dark:text-white">
-        <CardTitle>Deleted Items</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <Trash className="h-5 w-5 text-muted-foreground" />
+          Deleted Items
+        </CardTitle>
         <CardDescription className="dark:text-gray-300">
           Items are automatically removed after 15 days
         </CardDescription>
@@ -108,13 +112,17 @@ const DeletedItemsManager = () => {
             </div>
           </div>
         ) : deletedItems.length === 0 ? (
-          <div className="text-center py-4 text-muted-foreground">
-            No deleted items to display
-          </div>
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>No deleted items</AlertTitle>
+            <AlertDescription>
+              No deleted items to restore at this time. Items deleted within the past 15 days will appear here.
+            </AlertDescription>
+          </Alert>
         ) : (
           <div className="space-y-4">
             {deletedItems.map((item) => (
-              <div key={item.id} className="border rounded-md p-4 dark:border-gray-700">
+              <div key={item.id} className="border rounded-md p-4 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                 <div className="flex justify-between items-start mb-2">
                   <div>
                     <h4 className="font-medium dark:text-white">
@@ -131,12 +139,12 @@ const DeletedItemsManager = () => {
                 <Separator className="my-2" />
                 <div className="flex justify-end gap-2 mt-2">
                   <Button 
-                    variant="outline"
+                    variant="default"
                     size="sm"
                     onClick={() => handleRestore(item.id)}
                     className="flex items-center gap-1"
                   >
-                    <RefreshCw className="h-3 w-3" /> Restore
+                    <RefreshCw className="h-3 w-3" /> Restore Item
                   </Button>
                 </div>
               </div>

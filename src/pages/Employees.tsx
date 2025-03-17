@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Employee } from "@/types/employee";
@@ -13,9 +12,11 @@ import { getEmployees, addEmployee, deleteEmployee, updateEmployee } from "@/uti
 import { EventTypes, emitEvent } from "@/utils/eventBus";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Employees = () => {
   const navigate = useNavigate();
+  const { userId, isAuthenticated } = useAuth();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [isAddingEmployee, setIsAddingEmployee] = useState(false);
   const [isMassUploading, setIsMassUploading] = useState(false);
@@ -25,30 +26,109 @@ const Employees = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchEmployees();
-  }, []);
+    if (isAuthenticated && userId) {
+      fetchEmployees();
+
+      // Subscribe to realtime updates for this user's employees
+      const channel = supabase
+        .channel('employee-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'employees',
+            filter: `user_id=eq.${userId}`
+          },
+          (payload) => {
+            console.log('Realtime update received:', payload);
+            fetchEmployees(); // Refresh employees when data changes
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [userId, isAuthenticated]);
 
   const fetchEmployees = async () => {
     try {
       setIsLoading(true);
       console.log("Employees page: Fetching employee data");
-      const data = await getEmployees();
-      console.log("Employees page: Employee data fetched", data);
       
-      if (Array.isArray(data)) {
-        setEmployees(data);
+      // Try to get employees from Supabase first
+      if (userId) {
+        const { data: supabaseEmployees, error } = await supabase
+          .from('employees')
+          .select('*')
+          .eq('user_id', userId);
+        
+        if (error) {
+          console.error("Error fetching employees from Supabase:", error);
+          // Fall back to localStorage if Supabase fails
+          const localData = await getEmployees();
+          setEmployees(localData);
+        } else if (supabaseEmployees && supabaseEmployees.length > 0) {
+          console.log("Employees page: Supabase employee data fetched", supabaseEmployees);
+          
+          // Map Supabase data to our Employee type
+          const formattedEmployees = supabaseEmployees.map(emp => ({
+            id: emp.id,
+            name: `${emp.first_name} ${emp.last_name}`,
+            position: emp.position,
+            department: emp.department,
+            email: emp.email,
+            phone: emp.phone || '',
+            gender: emp.gender || '',
+            dateOfBirth: emp.date_of_birth || '',
+            nationality: emp.nationality || '',
+            address: emp.address || '',
+            employeeId: emp.employee_id || '',
+            employmentType: emp.employment_type || 'Full-time',
+            hireDate: emp.hire_date || new Date().toISOString().split('T')[0],
+            workLocation: emp.work_location || '',
+            managerName: emp.manager_name || '',
+            status: emp.status || 'Active',
+            payFrequency: emp.pay_frequency || 'Monthly',
+            emergencyContactName: emp.emergency_contact_name || '',
+            emergencyContactPhone: emp.emergency_contact_phone || '',
+            emergencyContactRelationship: emp.emergency_contact_relationship || '',
+            emergencyContactEmail: emp.emergency_contact_email || '',
+            salary: emp.salary || 0,
+            overtimeEligible: emp.overtime_eligible || false,
+            bonusEligible: emp.bonus_eligible || false,
+            taxId: emp.tax_id || '',
+            bankAccountDetails: emp.bank_account_details || '',
+            secondaryEmergencyContact: emp.secondary_emergency_contact || '',
+            healthInsurance: emp.health_insurance || '',
+            dentalVisionCoverage: emp.dental_vision_coverage || '',
+            retirementPlan: emp.retirement_plan || '',
+            workSchedule: emp.work_schedule || 'Fixed',
+            user_id: emp.user_id
+          }));
+          
+          setEmployees(formattedEmployees);
+        } else {
+          // No data in Supabase, try localStorage
+          const localData = await getEmployees();
+          setEmployees(localData);
+          
+          // If we have local data but no Supabase data, try to sync it
+          if (localData && localData.length > 0) {
+            syncLocalEmployeesToSupabase(localData);
+          }
+        }
       } else {
-        console.error("Invalid employee data format:", data);
-        toast({
-          title: "Data Error",
-          description: "Received invalid employee data format. Try refreshing the page.",
-          variant: "destructive",
-        });
+        // No user ID, just use localStorage
+        const localData = await getEmployees();
+        setEmployees(localData);
       }
     } catch (error) {
       console.error("Error fetching employees:", error);
       toast({
-        title: "Error",
+        title: "Data Error",
         description: "Failed to load employees. Please try again.",
         variant: "destructive",
       });
@@ -57,9 +137,87 @@ const Employees = () => {
     }
   };
 
+  // Function to sync local employees to Supabase
+  const syncLocalEmployeesToSupabase = async (localEmployees: Employee[]) => {
+    if (!userId || !localEmployees || localEmployees.length === 0) return;
+    
+    try {
+      console.log("Syncing local employees to Supabase");
+      
+      for (const emp of localEmployees) {
+        const nameParts = emp.name.split(' ');
+        const firstName = nameParts[0];
+        const lastName = nameParts.slice(1).join(' ');
+        
+        // Check if this employee already exists in Supabase
+        const { data: existingEmp, error: checkError } = await supabase
+          .from('employees')
+          .select('id')
+          .eq('email', emp.email)
+          .eq('user_id', userId);
+          
+        if (checkError) {
+          console.error("Error checking for existing employee:", checkError);
+          continue;
+        }
+        
+        if (existingEmp && existingEmp.length > 0) {
+          console.log(`Employee ${emp.email} already exists in Supabase, skipping`);
+          continue;
+        }
+        
+        // Insert the employee into Supabase
+        const { error: insertError } = await supabase
+          .from('employees')
+          .insert({
+            first_name: firstName,
+            last_name: lastName,
+            email: emp.email,
+            position: emp.position,
+            department: emp.department,
+            phone: emp.phone,
+            gender: emp.gender,
+            date_of_birth: emp.dateOfBirth || null,
+            nationality: emp.nationality,
+            address: emp.address,
+            employee_id: emp.employeeId,
+            employment_type: emp.employmentType,
+            hire_date: emp.hireDate || new Date().toISOString().split('T')[0], // Required field
+            work_location: emp.workLocation,
+            manager_name: emp.managerName,
+            status: emp.status,
+            pay_frequency: emp.payFrequency,
+            emergency_contact_name: emp.emergencyContactName,
+            emergency_contact_phone: emp.emergencyContactPhone,
+            emergency_contact_relationship: emp.emergencyContactRelationship,
+            emergency_contact_email: emp.emergencyContactEmail,
+            salary: emp.salary,
+            overtime_eligible: emp.overtimeEligible,
+            bonus_eligible: emp.bonusEligible,
+            tax_id: emp.taxId,
+            bank_account_details: emp.bankAccountDetails,
+            secondary_emergency_contact: emp.secondaryEmergencyContact,
+            health_insurance: emp.healthInsurance,
+            dental_vision_coverage: emp.dentalVisionCoverage,
+            retirement_plan: emp.retirementPlan,
+            work_schedule: emp.workSchedule,
+            user_id: userId
+          });
+          
+        if (insertError) {
+          console.error(`Error syncing employee ${emp.email} to Supabase:`, insertError);
+        } else {
+          console.log(`Successfully synced employee ${emp.email} to Supabase`);
+        }
+      }
+    } catch (error) {
+      console.error("Error during employee sync:", error);
+    }
+  };
+
   const handleAddEmployee = async (employee: Omit<Employee, "id">) => {
     try {
-      await addEmployee(employee);
+      const newEmployee = await addEmployee(employee);
       await fetchEmployees();
       
       emitEvent(EventTypes.EMPLOYEE_DATA_CHANGED, { action: 'add', employeeName: employee.name });
@@ -82,21 +240,6 @@ const Employees = () => {
   const handleDeleteEmployee = async (id: string) => {
     try {
       const employeeToDelete = employees.find(e => e.id === id);
-      
-      // If this employee is linked to a user account, first unlink it
-      if (employeeToDelete && employeeToDelete.user_id) {
-        const { error: unlinkError } = await supabase
-          .from('employees')
-          .update({ user_id: null })
-          .eq('id', id);
-        
-        if (unlinkError) {
-          console.error("Failed to unlink employee from user before deletion:", unlinkError);
-          // Continue with deletion anyway
-        } else {
-          console.log("Employee successfully unlinked from user account");
-        }
-      }
       
       await deleteEmployee(id);
       await fetchEmployees();
