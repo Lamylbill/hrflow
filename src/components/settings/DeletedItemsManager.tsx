@@ -97,7 +97,7 @@ const DeletedItemsManager = () => {
           Deleted Items
         </CardTitle>
         <CardDescription className="dark:text-gray-300">
-          Items are automatically removed after 15 days
+          Items are automatically removed after 15 days. You can restore them here.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -142,7 +142,7 @@ const DeletedItemsManager = () => {
                     variant="default"
                     size="sm"
                     onClick={() => handleRestore(item.id)}
-                    className="flex items-center gap-1"
+                    className="flex items-center gap-1 bg-primary hover:bg-primary-600 text-white"
                   >
                     <RefreshCw className="h-3 w-3" /> Restore Item
                   </Button>

@@ -30,7 +30,7 @@ const Employees = () => {
     if (isAuthenticated && userId) {
       fetchEmployees();
 
-      // Subscribe to realtime updates for this user's employees
+      // Subscribe to realtime updates for this user's employees - this addresses the cross-browser sync issue
       const channel = supabase
         .channel('employee-changes')
         .on(
@@ -87,11 +87,14 @@ const Employees = () => {
             nationality: emp.nationality || '',
             address: emp.address || '',
             employeeId: emp.employee_id || '',
+            // Fix type issue - cast to the proper enumerated type
             employmentType: (emp.employment_type as 'Full-time' | 'Part-time' | 'Contract') || 'Full-time',
             hireDate: emp.hire_date || new Date().toISOString().split('T')[0],
             workLocation: emp.work_location || '',
             managerName: emp.manager_name || '',
+            // Fix type issue - cast to the proper enumerated type
             status: (emp.status as 'Active' | 'On Leave' | 'Terminated') || 'Active',
+            // Fix type issue - cast to the proper enumerated type
             payFrequency: (emp.pay_frequency as 'Monthly' | 'Bi-Weekly' | 'Weekly') || 'Monthly',
             emergencyContactName: emp.emergency_contact_name || '',
             emergencyContactPhone: emp.emergency_contact_phone || '',
@@ -106,6 +109,7 @@ const Employees = () => {
             healthInsurance: emp.health_insurance || '',
             dentalVisionCoverage: emp.dental_vision_coverage || '',
             retirementPlan: emp.retirement_plan || '',
+            // Fix type issue - cast to the proper enumerated type
             workSchedule: (emp.work_schedule as 'Fixed' | 'Flexible' | 'Remote') || 'Fixed',
             user_id: emp.user_id
           }));

@@ -8,12 +8,13 @@
 }
 
 .camera-icon {
-  @apply text-gray-800 dark:text-white hover:text-primary dark:hover:text-sky-100;
-  @apply transition-colors duration-200;
-  /* Improved visibility with higher contrast */
-  @apply bg-gray-100 dark:bg-gray-600 p-1.5 rounded-full;
-  @apply ring-2 ring-gray-400 dark:ring-gray-300;
-  @apply shadow-md;
+  /* Major visibility improvements */
+  @apply text-white bg-primary hover:bg-primary-600 hover:scale-110;
+  @apply transition-all duration-200;
+  /* High contrast styling with glow effect */
+  @apply p-2 rounded-full;
+  @apply ring-2 ring-white;
+  @apply shadow-lg;
   /* Ensure text visibility against background */
   @apply flex items-center justify-center;
 }
@@ -28,8 +29,8 @@
   @apply absolute bottom-0 right-0 z-10;
   @apply transform transition-transform duration-200;
   /* Ensure higher contrast for better visibility */
-  @apply bg-white dark:bg-gray-800 rounded-full;
-  @apply border-2 border-gray-300 dark:border-gray-600;
+  @apply bg-white dark:bg-primary rounded-full;
+  @apply border-2 border-white;
 }
 
 .camera-icon-container:hover {
