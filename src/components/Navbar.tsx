@@ -140,9 +140,9 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Mobile menu button */}
+        {/* Mobile menu button - moved from right edge */}
         <button
-          className="md:hidden text-foreground dark:text-white p-1"
+          className="md:hidden text-foreground dark:text-white p-1 mr-3"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
           aria-label={isMenuOpen ? "Close menu" : "Open menu"}
         >

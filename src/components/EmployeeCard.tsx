@@ -65,7 +65,7 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onViewDetails }: EmployeeCar
   return (
     <>
       <GlassCard
-        className="transition-all duration-300 cursor-pointer"
+        className="transition-all duration-300 cursor-pointer relative"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         onClick={handleCardClick}
@@ -79,6 +79,7 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onViewDetails }: EmployeeCar
                   src={employee.imageUrl}
                   alt={employee.name}
                   className="w-full h-full object-cover"
+                  loading="lazy"
                 />
               ) : (
                 <span className="text-lg font-medium text-primary">
@@ -110,6 +111,28 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onViewDetails }: EmployeeCar
             <Phone className="h-3.5 w-3.5 mr-1.5" />
             <span>{employee.phone}</span>
           </div>
+        </div>
+        
+        {/* Action buttons that appear on hover */}
+        <div className={`absolute top-2 right-2 flex space-x-1 ${isHovered ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 bg-background/50 backdrop-blur-sm hover:bg-background/80"
+            onClick={(e) => handleEdit(e)}
+          >
+            <Pencil className="h-4 w-4" />
+            <span className="sr-only">Edit</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 bg-background/50 backdrop-blur-sm hover:bg-destructive hover:text-destructive-foreground"
+            onClick={(e) => handleDelete(e)}
+          >
+            <Trash2 className="h-4 w-4" />
+            <span className="sr-only">Delete</span>
+          </Button>
         </div>
       </GlassCard>
 
