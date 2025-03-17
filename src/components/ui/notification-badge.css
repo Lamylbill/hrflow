@@ -1,38 +1,40 @@
 
-/* Custom styles for notification badges and avatar camera icons in dark mode */
-.notification-badge {
-  @apply bg-gradient-to-b from-pink-500 to-purple-600 dark:from-pink-400 dark:to-purple-500;
-  @apply text-white dark:text-white font-semibold shadow-lg;
-  /* Improved visibility */
-  @apply ring-2 ring-white dark:ring-gray-800;
-}
+@layer components {
+  /* Custom styles for notification badges and avatar camera icons in dark mode */
+  .notification-badge {
+    @apply bg-gradient-to-b from-pink-500 to-purple-600 dark:from-pink-400 dark:to-purple-500;
+    @apply text-white dark:text-white font-semibold shadow-lg;
+    /* Improved visibility */
+    @apply ring-2 ring-white dark:ring-gray-800;
+  }
 
-.camera-icon {
-  /* Major visibility improvements */
-  @apply text-white bg-primary hover:bg-primary-500 hover:scale-110;
-  @apply transition-all duration-200;
-  /* High contrast styling with glow effect */
-  @apply p-2 rounded-full;
-  @apply ring-2 ring-white;
-  @apply shadow-lg;
-  /* Ensure text visibility against background */
-  @apply flex items-center justify-center;
-}
+  .camera-icon {
+    /* Major visibility improvements */
+    @apply text-white bg-primary hover:bg-primary/80 hover:scale-110;
+    @apply transition-all duration-200;
+    /* High contrast styling with glow effect */
+    @apply p-2 rounded-full;
+    @apply ring-2 ring-white;
+    @apply shadow-lg;
+    /* Ensure text visibility against background */
+    @apply flex items-center justify-center;
+  }
 
-/* Improve visibility for all icons in dark mode */
-.dark .icon-highlight {
-  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.7));
-}
+  /* Improve visibility for all icons in dark mode */
+  .dark .icon-highlight {
+    filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.7));
+  }
 
-/* Camera icon container positioning and hover effects */
-.camera-icon-container {
-  @apply absolute bottom-0 right-0 z-10;
-  @apply transform transition-transform duration-200;
-  /* Ensure higher contrast for better visibility */
-  @apply bg-white dark:bg-primary rounded-full;
-  @apply border-2 border-white;
-}
+  /* Camera icon container positioning and hover effects */
+  .camera-icon-container {
+    @apply absolute bottom-0 right-0 z-10;
+    @apply transform transition-transform duration-200;
+    /* Ensure higher contrast for better visibility */
+    @apply bg-white dark:bg-primary rounded-full;
+    @apply border-2 border-white;
+  }
 
-.camera-icon-container:hover {
-  @apply scale-110;
+  .camera-icon-container:hover {
+    @apply scale-110;
+  }
 }
