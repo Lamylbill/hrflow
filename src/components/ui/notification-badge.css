@@ -9,7 +9,7 @@
 
 .camera-icon {
   /* Major visibility improvements */
-  @apply text-white bg-primary hover:bg-primary-600 hover:scale-110;
+  @apply text-white bg-primary hover:bg-primary-500 hover:scale-110;
   @apply transition-all duration-200;
   /* High contrast styling with glow effect */
   @apply p-2 rounded-full;
