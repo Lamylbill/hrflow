@@ -66,9 +66,10 @@ const enableRealtimeForTables = async () => {
         const channelName = `table-db-changes-${tableName}`;
         
         // Create the channel and set up the subscription
+        // Use type assertion to fix the TypeScript error
         const channel = supabase
           .channel(channelName)
-          .on('postgres_changes', {
+          .on('postgres_changes' as any, {
             event: '*', 
             schema: 'public', 
             table: tableName
@@ -120,9 +121,10 @@ export const createRealtimeChannel = (
   const channelName = `${tableName}-${event}-${Date.now()}`;
   
   // Create and subscribe to the channel with correct ordering
+  // Use type assertion to fix the TypeScript error
   const channel = supabase
     .channel(channelName)
-    .on('postgres_changes', {
+    .on('postgres_changes' as any, {
       event: event, 
       schema: 'public', 
       table: tableName, 
